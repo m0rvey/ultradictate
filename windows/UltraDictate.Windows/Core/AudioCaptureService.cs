@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NAudio.Wave;
+using NAudio.CoreAudioApi;
 
 namespace UltraDictate.Windows.Core;
 
