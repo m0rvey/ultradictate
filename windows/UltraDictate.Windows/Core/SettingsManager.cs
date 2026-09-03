@@ -54,4 +54,6 @@ public static class SettingsManager
         }
         catch { }
     }
+
+    public static void SaveSettings(AppSettings settings) => Save(settings);
 }
