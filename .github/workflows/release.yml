@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS Release
+    runs-on: macos-14
+    outputs:
+      sha256: ${{ steps.package.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Application Bundle
+        run: ./scripts/build-app.sh "$RUNNER_TEMP/UltraDictate.app"
+      - name: Package macOS Zip
+        id: package
+        run: |
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/UltraDictate.app" "dist/UltraDictate-macOS-arm64.zip"
+          checksum=$(shasum -a 256 "dist/UltraDictate-macOS-arm64.zip" | awk '{print $1}')
+          echo "sha256=$checksum" >> $GITHUB_OUTPUT
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: dist/UltraDictate-macOS-arm64.zip
+
+  build-windows:
+    name: Build Windows Release
+    runs-on: windows-latest
+    outputs:
+      sha256: ${{ steps.package.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish Windows Standalone Executable
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true windows/UltraDictate.Windows/UltraDictate.Windows.csproj -o dist-win
+      - name: Package Windows Zip
+        id: package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Compress-Archive -Path dist-win/* -DestinationPath dist/UltraDictate-Windows-x64.zip -Force
+          $hash = (Get-FileHash dist/UltraDictate-Windows-x64.zip -Algorithm SHA256).Hash.ToLower()
+          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: dist/UltraDictate-Windows-x64.zip
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-release
+          path: release-assets
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+          path: release-assets
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name != '' && github.ref_name || inputs.tag }}
+          name: UltraDictate ${{ github.ref_name != '' && github.ref_name || inputs.tag }}
+          draft: false
+          prerelease: false
+          files: |
+            release-assets/UltraDictate-macOS-arm64.zip
+            release-assets/UltraDictate-Windows-x64.zip
+          body: |
+            ## 🎙️ UltraDictate Release
+            
+            UltraDictate is a high-performance, private push-to-talk speech dictation system for macOS and Windows.
+            
+            ### 📦 Downloads
+            - **macOS (Apple Silicon M1-M4):** [`UltraDictate-macOS-arm64.zip`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name != '' && github.ref_name || inputs.tag }}/UltraDictate-macOS-arm64.zip)
+              - SHA-256: `${{ needs.build-macos.outputs.sha256 }}`
+            - **Windows (x64):** [`UltraDictate-Windows-x64.zip`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name != '' && github.ref_name || inputs.tag }}/UltraDictate-Windows-x64.zip)
+              - SHA-256: `${{ needs.build-windows.outputs.sha256 }}`
+            
+            ### ⚡ Features
+            - **Push-to-Talk Global Hotkey:** Right Command (macOS) / Right Control (Windows)
+            - **Hardware Acceleration:** Apple Neural Engine (ANE) on macOS / DirectML GPU/NPU on Windows
+            - **100% Offline & Private:** Zero external telemetry
+            - **Optional AI Cleanup:** Local Ollama support & cloud models

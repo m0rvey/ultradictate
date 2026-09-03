@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: Build & Test (macOS Apple Silicon)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate scripts and plists
+        run: ./scripts/check.sh
+      - name: Swift self-tests
+        run: swift run -c debug --package-path swift UltraDictate --self-test all
+      - name: Build app bundle
+        run: ./scripts/build-app.sh "$RUNNER_TEMP/UltraDictate.app"
+      - name: Verify app bundle
+        run: |
+          test -x "$RUNNER_TEMP/UltraDictate.app/Contents/MacOS/UltraDictate"
+          codesign --verify --deep --strict "$RUNNER_TEMP/UltraDictate.app"
+
+  windows:
+    name: Build & Test (Windows x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore dependencies
+        run: dotnet restore windows/UltraDictate.Windows/UltraDictate.Windows.csproj
+      - name: Build Windows App
+        run: dotnet build -c Release windows/UltraDictate.Windows/UltraDictate.Windows.csproj
+      - name: Publish Single-File Executable
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true windows/UltraDictate.Windows/UltraDictate.Windows.csproj -o dist-windows
+      - name: Verify Executable Exists
+        run: |
+          if (!(Test-Path dist-windows/UltraDictate.exe)) {
+            Write-Error "UltraDictate.exe not found!"
+            exit 1
+          }

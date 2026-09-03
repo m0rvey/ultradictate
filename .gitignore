@@ -1,0 +1,26 @@
+# OS & Editor
+.DS_Store
+*.xcuserstate
+*.swp
+*~
+.idea/
+.vscode/
+
+# Swift / macOS Build
+.build/
+swift/.build/
+dist/
+
+# Windows / .NET Build
+bin/
+obj/
+*.user
+*.suo
+.vs/
+windows/bin/
+windows/obj/
+windows/dist/
+windows/.vs/
+
+# Logs & Temporary files
+*.log
