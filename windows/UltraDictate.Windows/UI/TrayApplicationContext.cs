@@ -38,9 +38,20 @@ public class TrayApplicationContext : ApplicationContext
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add("Exit", null, (s, e) => ExitApp());
 
+        Icon trayIcon = SystemIcons.Application;
+        try
+        {
+            var resIcon = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "app.ico");
+            if (File.Exists(resIcon))
+            {
+                trayIcon = new Icon(resIcon);
+            }
+        }
+        catch { }
+
         _trayIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = trayIcon,
             ContextMenuStrip = contextMenu,
             Text = "UltraDictate — Hold Right Ctrl to dictate",
             Visible = true
