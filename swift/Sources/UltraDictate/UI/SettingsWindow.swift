@@ -87,6 +87,8 @@ private final class SettingsDocumentView: NSView {
     override var isFlipped: Bool { true }
 }
 
+typealias UltraDictateControlPanelApp = SuperDictateControlPanelApp
+
 @MainActor
 final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow?
@@ -177,7 +179,7 @@ final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWind
                               styleMask: [.titled, .closable, .miniaturizable],
                               backing: .buffered,
                               defer: false)
-        window.title = "SuperDictate"
+        window.title = "UltraDictate"
         window.contentMinSize = NSSize(width: 520, height: 310)
         window.contentMaxSize = NSSize(width: 520, height: 310)
         window.isReleasedWhenClosed = false
@@ -209,10 +211,10 @@ final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWind
         guard force || fingerprint != lastRenderFingerprint else { return }
         lastRenderFingerprint = fingerprint
         resizeCompactPanel(window)
-        window.title = t("SuperDictate — панель управления", "SuperDictate — Control Panel")
+        window.title = t("UltraDictate — панель управления", "UltraDictate — Control Panel")
         window.contentView = makeContentView()
         if let settingsWindow, settingsWindow.isVisible {
-            settingsWindow.title = t("Настройки SuperDictate", "SuperDictate Settings")
+            settingsWindow.title = t("Настройки UltraDictate", "UltraDictate Settings")
         }
     }
 
@@ -483,16 +485,15 @@ final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWind
         text.orientation = .vertical
         text.alignment = .leading
         text.spacing = 1
-        text.addArrangedSubview(panelLabel("SuperDictate", size: 20, weight: .semibold))
+        text.addArrangedSubview(panelLabel("UltraDictate", size: 20, weight: .semibold))
+        let version = panelLabel("v\(currentBundleVersion())", size: 11, color: .tertiaryLabelColor)
+        version.setContentHuggingPriority(.required, for: .horizontal)
+        version.toolTip = t("Установленная версия UltraDictate", "Installed UltraDictate version")
         text.addArrangedSubview(panelLabel(
             t("Локальная диктовка · работает в фоне", "Local dictation · runs in the background"),
             size: 11.5,
             color: .secondaryLabelColor
         ))
-
-        let version = panelLabel("v\(currentBundleVersion())", size: 11, color: .tertiaryLabelColor)
-        version.setContentHuggingPriority(.required, for: .horizontal)
-        version.toolTip = t("Установленная версия SuperDictate", "Installed SuperDictate version")
 
         let languageControl = NSSegmentedControl(labels: ["RU", "EN"],
                                                  trackingMode: .selectOne,
@@ -695,8 +696,8 @@ final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWind
                 size: 11,
                 color: .secondaryLabelColor
             )
-            ready.toolTip = t("SuperDictate получил все три необходимых разрешения macOS.",
-                              "SuperDictate has all three required macOS permissions.")
+            ready.toolTip = t("UltraDictate получил все три необходимых разрешения macOS.",
+                              "UltraDictate has all three required macOS permissions.")
             content.addArrangedSubview(ready)
         } else {
             for permission in missing {
@@ -783,7 +784,7 @@ final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWind
                     nil, nil, false, nil)
         case .upToDate:
             return ("checkmark.circle.fill", .systemGreen,
-                    t("SuperDictate актуален", "SuperDictate is up to date"),
+                    t("UltraDictate актуален", "UltraDictate is up to date"),
                     t("Установлена последняя версия v\(currentBundleVersion())",
                       "Latest version v\(currentBundleVersion()) is installed"),
                     t("Проверить", "Check"), #selector(updateButtonClicked(_:)), true,
@@ -1522,8 +1523,8 @@ final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWind
             enabled: serviceOperation == nil && !dictationInProgress,
             toolTip: dictationInProgress
                 ? t("Сначала завершите текущую диктовку.", "Finish the current dictation first.")
-                : t("Отозвать разрешения SuperDictate после дополнительного подтверждения.",
-                    "Revoke SuperDictate permissions after an additional confirmation.")
+                : t("Отозвать разрешения UltraDictate после дополнительного подтверждения.",
+                    "Revoke UltraDictate permissions after an additional confirmation.")
         )
         reset.setContentHuggingPriority(.required, for: .horizontal)
 
@@ -2140,7 +2141,7 @@ final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWind
             backing: .buffered,
             defer: false
         )
-        settingsWindow.title = t("Настройки SuperDictate", "SuperDictate Settings")
+        settingsWindow.title = t("Настройки UltraDictate", "UltraDictate Settings")
         settingsWindow.contentMinSize = NSSize(width: 680, height: contentHeight)
         settingsWindow.contentMaxSize = NSSize(width: 680, height: contentHeight)
         settingsWindow.isReleasedWhenClosed = false
@@ -2543,8 +2544,8 @@ final class SuperDictateControlPanelApp: NSObject, NSApplicationDelegate, NSWind
 
         let confirmation = NSAlert()
         confirmation.alertStyle = .critical
-        confirmation.messageText = t("Сбросить разрешения SuperDictate?",
-                                     "Reset SuperDictate Permissions?")
+        confirmation.messageText = t("Сбросить разрешения UltraDictate?",
+                                     "Reset UltraDictate Permissions?")
         confirmation.informativeText = t(
             "Микрофон, Универсальный доступ и Мониторинг ввода будут отозваны. Используйте это только для восстановления сломанных разрешений; затем их нужно выдать заново.",
             "Microphone, Accessibility, and Input Monitoring access will be revoked. Use this only to recover stuck permissions; all three must then be granted again."

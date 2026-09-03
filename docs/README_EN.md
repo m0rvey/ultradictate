@@ -1,16 +1,18 @@
 <div align="center">
 
-# 🎙️ SuperDictate
+# 🎙️ UltraDictate
 
-**Fast, private, on-device push-to-talk voice dictation for macOS on Apple Silicon.**
+**Lightning-fast, 100% on-device and private speech-to-text dictation for macOS and Windows.**
 
-[![Swift](https://img.shields.io/badge/Swift-5.10%2B-F05138?style=flat-square&logo=swift&logoColor=white)](https://swift.org/)
-[![SwiftUI](https://img.shields.io/badge/SwiftUI-macOS-007ACC?style=flat-square&logo=swift&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
-[![CoreML](https://img.shields.io/badge/CoreML-Apple%20Silicon-FF6F00?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/coreml)
-[![Platform](https://img.shields.io/badge/Platform-macOS%2014%2B%20(Apple%20Silicon)-000000?style=flat-square&logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20(M1--M4)-000000?style=flat-square&logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![Windows](https://img.shields.io/badge/Windows-10%2F11%20(x64)-0078D6?style=flat-square&logo=windows&logoColor=white)](../windows/)
+[![Swift](https://img.shields.io/badge/Swift-6.0-F05138?style=flat-square&logo=swift&logoColor=white)](https://swift.org/)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![DirectML](https://img.shields.io/badge/DirectML-Hardware%20Accelerated-0078D4?style=flat-square)](../windows/)
+[![CoreML](https://img.shields.io/badge/CoreML-Apple%20Neural%20Engine-FF6F00?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/coreml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](../LICENSE)
 
-[Features](#-key-features) • [Installation](#-quick-install) • [Hotkeys](#-hotkeys--controls) • [Building](#-build-from-source) • [Русская версия](README.md)
+[Features](#-key-features) • [Installation (macOS)](#-installation-macos) • [Installation (Windows)](#-installation-windows) • [Hotkeys](#-hotkeys) • [Building](#-building-from-source) • [Русская версия](README.md)
 
 </div>
 
@@ -18,60 +20,82 @@
 
 ## 📌 Overview
 
-**SuperDictate** is a native macOS speech-to-text dictation application designed for speed, privacy, and zero reliance on external cloud APIs. Audio transcription is processed completely on-device utilizing the **Apple Neural Engine (ANE)** through CoreML models.
+**UltraDictate** is a native cross-platform speech-to-text dictation application designed for speed, total privacy, and instant insertion of spoken text into any active app.
+
+- **macOS:** Native Swift/SwiftUI application utilizing Apple Neural Engine (ANE) via CoreML for ultra-low latency (< 250 ms).
+- **Windows:** Native .NET 8 / C# application powered by DirectML and ONNX Runtime running on NVIDIA RTX, AMD Radeon, Intel Arc/NPU, and multi-core CPU.
 
 ---
 
 ## ✨ Key Features
 
-- 🔒 **100% On-Device & Private:** Audio never leaves your Mac. Zero accounts, zero tracking, zero external telemetry.
-- ⚡ **Instant Response (< 0.2ms startup):** Fast Fingerprint Cache eliminates model metadata parsing delays.
-- 🌊 **ProMotion 120Hz Capsule UI:** Floating recording pill with hardware-accelerated audio waveform visualizer.
-- 🌍 **Multilingual ASR:** Support for English, Russian, and other languages with automatic language detection.
-- 🔋 **Optimized for 8GB+ RAM:** Efficient inference buffer management and minimal background battery drain.
-- ⌨️ **Global Push-to-Talk:** Press and hold (or tap) global hotkey to transcribe and paste directly into any active app.
+- 🔒 **100% On-Device & Private:** Audio stream never leaves your device. No telemetry, no tracking, zero third-party analytics.
+- ⚡ **Instant Push-to-Talk:** Press and hold your preferred hotkey, speak naturally, and text is instantly inserted into any active editor or app.
+- 🧠 **Local AI Cleanup:** Optional post-processing with local **Ollama** (`http://localhost:11434/v1`) or LM Studio without needing any external API keys.
+- 🗣️ **Voice Commands & Punctuation:** Native voice commands for "new line", "new paragraph", and automated punctuation formatting.
+- 🎨 **Glassmorphic Floating HUD:** Minimalist dark mode HUD displaying audio waveform levels and recording status.
+- 🔋 **Optimized Resource Consumption:** Zero background CPU usage while idle.
 
 ---
 
-## 🚀 Quick Install
+## 🚀 Installation (macOS)
 
 ### Requirements
-- Mac with **Apple Silicon** (from M1 or A18 Pro).
-- **macOS 14 (Sonoma)** or newer.
+- Mac with **Apple Silicon** (M1/M2/M3/M4 or A18 Pro).
+- **macOS 14 (Sonoma)** or later.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/shlgd/SuperDictate/v0.2.40/install.sh | /usr/bin/arch -arm64 /bin/bash
+curl -fsSL https://raw.githubusercontent.com/m0rvey/ultradictate/v1.0.0/install.sh | /usr/bin/arch -arm64 /bin/bash
 ```
 
-1. Launch SuperDictate and grant requested permissions: **Microphone**, **Accessibility**, and **Input Monitoring**.
-2. Press **Right Command** to begin speaking, and press it again to paste the transcribed text.
+1. Launch UltraDictate and grant permissions: **Microphone**, **Accessibility**, and **Input Monitoring**.
+2. Press and hold **Right Command** to dictate. Release to paste.
 
 ---
 
-## ⌨️ Hotkeys & Controls
+## 🪟 Installation (Windows)
 
-| Action | Default Hotkey | Behavior |
+### Requirements
+- 64-bit **Windows 10 / 11**.
+- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
+
+### Run
+1. Download `UltraDictate-Windows-x64.zip` from [Releases](https://github.com/m0rvey/ultradictate/releases).
+2. Extract the archive and launch `UltraDictate.exe`.
+3. Press and hold **Right Control** to dictate.
+
+---
+
+## ⌨️ Hotkeys
+
+| Platform | Default Hotkey | Action |
 | :--- | :--- | :--- |
-| **Push-to-Talk** | `Right ⌘ (Hold)` | Record while holding, paste on release |
-| **Toggle Mode** | `Right ⌘ (Tap)` | Tap to start, tap again to paste |
-| **Cancel Dictation** | `Escape` | Discard current recording without pasting |
+| **macOS** | `Right ⌘ (Right Command)` | Push-to-Talk: Hold to record, release to insert |
+| **Windows** | `Right Ctrl (Right Control)` | Push-to-Talk: Hold to record, release to insert |
+| **All Platforms** | `Escape` | Cancel recording without inserting text |
 
 ---
 
-## 🛠️ Build from Source
+## 🛠️ Building from Source
 
+### macOS
 ```bash
-# Clone repository
-git clone https://github.com/m0rvey/SuperDictate.git
-cd SuperDictate
+git clone https://github.com/m0rvey/ultradictate.git
+cd ultradictate
+./scripts/build-app.sh ./dist/UltraDictate.app
+```
 
-# Build using Swift package manager
-swift build -c release
+### Windows
+```cmd
+git clone https://github.com/m0rvey/ultradictate.git
+cd ultradictate\windows
+build.bat
 ```
 
 ---
 
-## 📄 License
+## 📜 Attribution & License
 
-Distributed under the **MIT License**. See [LICENSE](../LICENSE) for details.  
-Upstream codebase created by [shlgd](https://github.com/shlgd/SuperDictate).
+- Author: **m0rvey** ([GitHub](https://github.com/m0rvey))
+- Derived from SuperDictate and Parakey (MIT License).
+- Distributed under the [MIT License](../LICENSE).

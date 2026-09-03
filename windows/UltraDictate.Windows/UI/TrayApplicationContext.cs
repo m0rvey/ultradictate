@@ -97,19 +97,23 @@ public class TrayApplicationContext : ApplicationContext
 
     private void ShowSettings()
     {
-        MessageBox.Show(
-            "UltraDictate Settings:\n- Hotkey: Right Control\n- AI Cleanup: " +
-            (_settings.EnableAICleanup ? "Enabled" : "Disabled") +
-            "\n- Configuration file: %APPDATA%\\UltraDictate\\config.json",
-            "UltraDictate Settings",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        using var form = new SettingsForm(_settings, updated =>
+        {
+            SettingsManager.SaveSettings(updated);
+            _trayIcon.Text = $"UltraDictate — {updated.Hotkey}";
+        });
+        form.ShowDialog();
     }
 
     private void ShowAbout()
     {
         MessageBox.Show(
-            "UltraDictate 1.0.0\nHigh-performance speech dictation for macOS & Windows.\nAuthor: m0rvey\nMIT Licensed.",
+            "UltraDictate v1.0.0\n" +
+            "Fast, private, local push-to-talk speech dictation for macOS & Windows.\n\n" +
+            "Hardware Acceleration: DirectML (GPU / NPU) & Apple Silicon (ANE)\n" +
+            "AI Post-Processing: Local Ollama & LM Studio ready\n\n" +
+            "Author: m0rvey (github.com/m0rvey/ultradictate)\n" +
+            "Licensed under the MIT License.",
             "About UltraDictate",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);

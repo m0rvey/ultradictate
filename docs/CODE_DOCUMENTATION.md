@@ -1,15 +1,14 @@
-# SuperDictate Code Documentation
+# UltraDictate Code Documentation
 
-SuperDictate is a high-performance, local-first push-to-talk dictation application built in Swift for macOS on Apple Silicon (`M1` through `M4` and `A18 Pro` / MacBook Neo).
+UltraDictate is a high-performance, local-first push-to-talk dictation system built for macOS (Apple Silicon via CoreML & ANE) and Windows (DirectML & ONNX Runtime).
 
 ---
 
 ## 1. High-Level Architecture
 
-The codebase is organized into modular layers located in `swift/Sources/Parakey/`:
-
+### macOS Engine (`swift/Sources/UltraDictate/`)
 ```
-swift/Sources/Parakey/
+swift/Sources/UltraDictate/
 ├── Core/                     # Core services, logging, settings, hotkeys, permissions
 │   ├── Constants.swift
 │   ├── Logger.swift
@@ -48,34 +47,51 @@ swift/Sources/Parakey/
 └── main.swift                # Unified CLI & process router
 ```
 
+### Windows Engine (`windows/UltraDictate.Windows/`)
+```
+windows/UltraDictate.Windows/
+├── Program.cs                # Entry point & single-instance mutex
+├── Core/
+│   ├── AudioCaptureService.cs    # Low-latency WASAPI 16kHz audio capture
+│   ├── GlobalHotkeyListener.cs   # Win32 SetWindowsHookEx keyboard tap
+│   ├── OnnxSpeechEngine.cs       # DirectML GPU-accelerated speech recognition
+│   ├── SettingsManager.cs        # JSON settings persistence in AppData
+│   ├── TextInputService.cs       # Win32 SendInput Ctrl+V injection
+│   └── TextPostProcessor.cs      # Voice commands, regex, local Ollama client
+└── UI/
+    ├── RecordingHUD.cs           # Dark mode glassmorphic floating HUD
+    ├── SettingsForm.cs           # Native configuration window
+    └── TrayApplicationContext.cs # System tray lifecycle and hotkey dispatcher
+```
+
 ---
 
 ## 2. Core Subsystems
 
 ### 2.1 Core Subsystem (`Core/`)
 - **`Constants.swift`**: Defines timing thresholds (`MIN_CLIP_SECONDS = 0.2`, `SAMPLE_RATE = 16_000.0`), bundle identifiers, file paths, and memory monitoring helpers (`AppMemoryUsage`).
-- **`Logger.swift`**: POSIX thread-safe logging with file descriptors (`PRIVATE_LOG_FILE_MODE = 0o600`) directly to `~/Library/Logs/SuperDictate.log`.
+- **`Logger.swift`**: POSIX thread-safe logging with file descriptors (`PRIVATE_LOG_FILE_MODE = 0o600`) directly to `~/Library/Logs/UltraDictate.log`.
 - **`Permissions.swift`**: Non-blocking asynchronous checks for Microphone (`AVCaptureDevice`), Accessibility (`AXIsProcessTrusted`), and Input Monitoring (`CGPreflightListenEventAccess`).
-- **`AgentService.swift`**: Manages `launchd` registration (`com.local.superdictate.agent`) via `SMAppService` and `launchctl`.
+- **`AgentService.swift`**: Manages `launchd` registration (`com.local.ultradictate.agent`) via `SMAppService` and `launchctl`.
 - **`Settings.swift`**: Type-safe UserDefaults wrapper, hotkey choice structures, dictation completion behaviors, history retention, and latency metrics.
 - **`HotkeyListener.swift`**: Low-level global event tap (`CGEventTapCreate`) intercepting keydown/keyup events without polling.
 
 ### 2.2 Audio Subsystem (`Audio/`)
 - **`AudioCapture.swift`**: Manages `AVAudioEngine`, installs audio tap, handles audio stream routing, and flushes raw PCM Float32 segments into atomic crash-recovery journals.
 - **`AudioConverter.swift`**: Downmixes multi-channel inputs and converts sample rates to 16,000 Hz mono using `AVAudioConverter`.
-- **`AudioDeviceManager.swift`**: CoreAudio hardware device discovery and filtering out temporary `CADefaultDeviceAggregate-` pseudo-devices.
+- **`AudioDeviceManager.swift`**: CoreAudio hardware device discovery and filtering out temporary pseudo-devices.
 - **`SystemAudioMute.swift`**: Optional ducking/muting of system playback while recording to prevent audio feedback.
 
 ### 2.3 Speech Subsystem (`Speech/`)
 - **`ModelIntegrity.swift`**: Implements **Fast Model Integrity Fingerprint Cache**. Reads file metadata (`st_mtimespec`, `st_size`, `st_ino`) and validates against `model_integrity_cache.json` in **< 0.2 ms**. Automatically computes full SHA-256 digests if files change.
 - **`SpeechModelProfile.swift`**: Metadata for Parakeet TDT v3 (0.6B multilingual CoreML model).
 - **`SpeechModelProgress.swift`**: Byte-weighted transfer and compilation progress tracker.
-- **`TranscriptionWorker.swift`**: Background actor handling `FluidAudio` model lifecycle, executing inference on Apple Neural Engine (ANE), and ensuring eager memory deallocation for 8 GB Unified Memory devices.
+- **`TranscriptionWorker.swift`**: Background actor handling `FluidAudio` model lifecycle, executing inference on Apple Neural Engine (ANE).
 
 ### 2.4 Text Subsystem (`Text/`)
 - **`TextProcessing.swift`**: Strips model artifacts, fixes spacing, punctuation, capitalization, and removes trailing periods when configured.
 - **`TranscriptCorrector.swift`**: User-defined regex and word replacement rules with fast single-pass substitution.
-- **`AICleanupService.swift`**: Optional OpenAI-compatible REST client (Groq, OpenAI, DeepSeek) for grammar cleanup.
+- **`AICleanupService.swift`**: Local Ollama (`http://localhost:11434/v1`) and OpenAI-compatible REST client for grammar and punctuation cleanup without requiring an API key for localhost.
 - **`TextInsertionStrategy.swift`**: Dual insertion pipeline:
   1. *Accessibility API (`AXUIElement`)*: Direct text attribute setting where supported.
   2. *Clipboard Paste Transaction*: Fast `Cmd+V` synthesized event with instant clipboard restoration.
@@ -95,9 +111,9 @@ swift/Sources/Parakey/
 
 ## 3. Development and Verification
 
-### Building and Running Self-Tests
+### Building and Running Self-Tests (macOS)
 ```bash
-swift run -c debug --package-path swift Parakey --self-test all
+swift run -c debug --package-path swift UltraDictate --self-test all
 ```
 
 ### Static Repository Verification
@@ -107,5 +123,10 @@ swift run -c debug --package-path swift Parakey --self-test all
 
 ### Building the Release App Bundle
 ```bash
-./scripts/build-app.sh ./dist/SuperDictate.app
+./scripts/build-app.sh ./dist/UltraDictate.app
+```
+
+### Building on Windows
+```cmd
+windows\build.bat
 ```

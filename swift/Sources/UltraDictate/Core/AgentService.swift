@@ -4,13 +4,17 @@
 import AppKit
 import Foundation
 
-func superDictateApplicationSupportDirectory() throws -> URL {
+func ultraDictateApplicationSupportDirectory() throws -> URL {
     let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent(APP_SUPPORT_DIR_NAME, isDirectory: true)
     try FileManager.default.createDirectory(at: url,
                                             withIntermediateDirectories: true,
                                             attributes: [.posixPermissions: 0o700])
     return url
+}
+
+func superDictateApplicationSupportDirectory() throws -> URL {
+    try ultraDictateApplicationSupportDirectory()
 }
 
 struct AgentRuntimeState: Codable {
@@ -60,9 +64,11 @@ enum AgentRuntimeStateStore {
     }
 }
 
+typealias UltraDictateControlPanelRegistry = SuperDictateControlPanelRegistry
+
 enum SuperDictateControlPanelRegistry {
     static var url: URL {
-        (try? superDictateApplicationSupportDirectory()
+        (try? ultraDictateApplicationSupportDirectory()
             .appendingPathComponent(CONTROL_PANEL_PID_FILE_NAME)) ??
         FileManager.default.temporaryDirectory.appendingPathComponent(CONTROL_PANEL_PID_FILE_NAME)
     }
@@ -152,6 +158,8 @@ struct ProcessRunResult {
     let status: Int32
     let output: String
 }
+
+typealias UltraDictateAgentService = SuperDictateAgentService
 
 enum SuperDictateAgentService {
     static var launchAgentURL: URL {

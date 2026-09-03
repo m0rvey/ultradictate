@@ -147,7 +147,7 @@ enum PendingDictationRecovery {
 
 final class PendingDictationJournal: @unchecked Sendable {
     let url: URL
-    private let queue = DispatchQueue(label: "SuperDictate.PendingDictationJournal",
+    private let queue = DispatchQueue(label: "UltraDictate.PendingDictationJournal",
                                       qos: .utility)
     private var fileDescriptor: Int32
     private var didLogWriteFailure = false
@@ -434,7 +434,7 @@ final class AudioCapture: @unchecked Sendable {
         let inputFormat = input.inputFormat(forBus: 0)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             throw NSError(
-                domain: "SuperDictate.AudioCapture",
+                domain: "UltraDictate.AudioCapture",
                 code: -2,
                 userInfo: [NSLocalizedDescriptionKey: "The selected microphone has no active audio stream."]
             )
@@ -446,7 +446,7 @@ final class AudioCapture: @unchecked Sendable {
             interleaved: false
         ) else {
             throw NSError(
-                domain: "SuperDictate.AudioCapture",
+                domain: "UltraDictate.AudioCapture",
                 code: -3,
                 userInfo: [NSLocalizedDescriptionKey: "Could not create the transcription audio format."]
             )
@@ -456,7 +456,7 @@ final class AudioCapture: @unchecked Sendable {
         let mixToMono = inputFormat.channelCount > 1 && sourceFormat.channelCount == 1
         guard let newConverter = AVAudioConverter(from: sourceFormat, to: targetFormat) else {
             throw NSError(
-                domain: "SuperDictate.AudioCapture",
+                domain: "UltraDictate.AudioCapture",
                 code: -4,
                 userInfo: [NSLocalizedDescriptionKey: "Could not convert audio from the selected microphone."]
             )

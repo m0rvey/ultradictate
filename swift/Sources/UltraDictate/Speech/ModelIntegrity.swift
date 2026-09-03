@@ -69,7 +69,7 @@ enum ModelIntegrityCache {
         let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return cachesDir
-            .appendingPathComponent("SuperDictate", isDirectory: true)
+            .appendingPathComponent("UltraDictate", isDirectory: true)
             .appendingPathComponent("model_integrity_cache.json")
     }
 

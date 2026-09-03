@@ -3340,8 +3340,8 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func confirmStopDictation() -> Bool {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "Stop SuperDictate?"
-        alert.informativeText = "The \(hotkey.hotkey.name) dictation shortcut will stop until you open SuperDictate again. Use Close to hide windows while keeping dictation running."
+        alert.messageText = "Stop UltraDictate?"
+        alert.informativeText = "The \(hotkey.hotkey.name) dictation shortcut will stop until you open UltraDictate again. Use Close to hide windows while keeping dictation running."
         alert.addButton(withTitle: "Keep Running")
         alert.addButton(withTitle: "Stop Dictation")
         return alert.runModal() == .alertSecondButtonReturn
@@ -3373,9 +3373,9 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         showAppForModal()
         let alert = NSAlert()
         alert.alertStyle = .informational
-        alert.messageText = "SuperDictate Reopened After an Unexpected Exit"
+        alert.messageText = "UltraDictate Reopened After an Unexpected Exit"
         alert.informativeText = """
-            Parakey appears to have exited last time without a normal shutdown. Nothing was sent anywhere.
+            UltraDictate appears to have exited last time without a normal shutdown. Nothing was sent anywhere.
 
             You can copy a privacy-safe diagnostics report or open the local log if you want to file an issue.
             """
@@ -3562,7 +3562,7 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // in the menu that gets such an indicator — every other row
         // sits flush against the left edge. The wrapper produces the
         // identical behaviour with no auto-glyph.
-        let quit = NSMenuItem(title: "Quit SuperDictate",
+        let quit = NSMenuItem(title: "Quit UltraDictate",
                               action: #selector(quitClicked(_:)),
                               keyEquivalent: "q")
         quit.target = self
@@ -3619,7 +3619,7 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         sub.addItem(.separator())
 
-        let about = NSMenuItem(title: "About SuperDictate",
+        let about = NSMenuItem(title: "About UltraDictate",
                                action: #selector(showAboutClicked(_:)),
                                keyEquivalent: "")
         about.target = self
@@ -3711,16 +3711,16 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if isCoreRuntimeReady {
             return "Starting hotkey listener…"
         }
-        return "SuperDictate is not ready"
+        return "UltraDictate is not ready"
     }
 
     private func diagnosticsText() -> String {
         let generated = ISO8601DateFormatter().string(from: Date())
         let bundlePath = Bundle.main.bundlePath
         let installKind: String
-        if bundlePath == "/Applications/SuperDictate.app" {
+        if bundlePath == "/Applications/UltraDictate.app" || bundlePath == "/Applications/SuperDictate.app" {
             installKind = "Applications app"
-        } else if bundlePath == "/tmp/SuperDictate-dev.app" {
+        } else if bundlePath == "/tmp/UltraDictate-dev.app" || bundlePath == "/tmp/SuperDictate-dev.app" {
             installKind = "signed dev app"
         } else {
             installKind = "other"
@@ -3884,7 +3884,7 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
                               styleMask: [.titled, .closable],
                               backing: .buffered,
                               defer: false)
-        window.title = "Set Up SuperDictate"
+        window.title = "Set Up UltraDictate"
         window.isReleasedWhenClosed = false
         window.delegate = self
         setupChecklistWindow = window
@@ -3947,8 +3947,8 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         root.edgeInsets = NSEdgeInsets(top: 20, left: 22, bottom: 18, right: 22)
         root.translatesAutoresizingMaskIntoConstraints = false
 
-        let title = setupLabel("Set Up SuperDictate", font: .systemFont(ofSize: 22, weight: .semibold))
-        let subtitle = setupLabel("Finish these checks before dictating. SuperDictate keeps this setup local to your Mac.",
+        let title = setupLabel("Set Up UltraDictate", font: .systemFont(ofSize: 22, weight: .semibold))
+        let subtitle = setupLabel("Finish these checks before dictating. UltraDictate keeps this setup local to your Mac.",
                                   font: .systemFont(ofSize: 13),
                                   color: .secondaryLabelColor)
         subtitle.preferredMaxLayoutWidth = 476
@@ -3966,7 +3966,7 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         root.addArrangedSubview(makeHotkeySetupRow())
 
         if !setupChecklistIsComplete {
-            let tip = setupLabel("Tip: If macOS does not show a permission prompt, click 'Open Settings' and enable SuperDictate in the displayed privacy section.",
+            let tip = setupLabel("Tip: If macOS does not show a permission prompt, click 'Open Settings' and enable UltraDictate in the displayed privacy section.",
                                  font: .systemFont(ofSize: 11),
                                  color: .secondaryLabelColor)
             tip.preferredMaxLayoutWidth = 476
@@ -4025,7 +4025,7 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func setupChecklistSummary() -> String {
         setupChecklistIsComplete
-            ? "Setup is complete. Use SuperDictate from the Dock or shortcuts."
+            ? "Setup is complete. Use UltraDictate from the Dock or shortcuts."
             : "You can close this window; the menu will keep tracking setup."
     }
 
@@ -4086,9 +4086,9 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         case .microphone:
             return "Captures your voice while dictating. Click 'Grant', then click 'OK' in the macOS prompt."
         case .accessibility:
-            return "Pastes the transcript at your cursor. Click 'Grant' to open System Settings → Privacy & Security → Accessibility, then enable the toggle next to 'SuperDictate'."
+            return "Pastes the transcript at your cursor. Click 'Grant' to open System Settings → Privacy & Security → Accessibility, then enable the toggle next to 'UltraDictate'."
         case .inputMonitoring:
-            return "Lets SuperDictate detect the dictation hotkey. Click 'Grant' to open System Settings → Privacy & Security → Input Monitoring, then enable the toggle next to 'SuperDictate'."
+            return "Lets UltraDictate detect the dictation hotkey. Click 'Grant' to open System Settings → Privacy & Security → Input Monitoring, then enable the toggle next to 'UltraDictate'."
         }
     }
 
@@ -4314,13 +4314,13 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
             launchAtLogin.state = .on
         case .requiresApproval:
             launchAtLogin.state = .mixed
-            launchAtLogin.toolTip = "Approve SuperDictate in System Settings → General → Login Items."
+            launchAtLogin.toolTip = "Approve UltraDictate in System Settings → General → Login Items."
         default:
             launchAtLogin.state = .off
         }
         sub.addItem(launchAtLogin)
 
-        let dock = NSMenuItem(title: "Show SuperDictate in Dock",
+        let dock = NSMenuItem(title: "Show UltraDictate in Dock",
                               action: #selector(toggleDock(_:)),
                               keyEquivalent: "")
         dock.target = self
@@ -5863,9 +5863,9 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func showAboutClicked(_ sender: NSMenuItem) {
         showAppForModal()
         let alert = NSAlert()
-        alert.messageText = "SuperDictate \(currentBundleVersion())"
+        alert.messageText = "UltraDictate \(currentBundleVersion())"
         alert.informativeText = """
-            Lightweight push-to-talk dictation for Apple Silicon Macs.
+            Lightweight push-to-talk dictation for Apple Silicon Macs and Windows.
 
             Hotkey:  \(hotkey.hotkey.name)
             Mode:    \(TRIGGER_DISPLAY[settings.triggerMode] ?? settings.triggerMode.rawValue)
@@ -5875,8 +5875,8 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
             Network: model download, optional update check and install.
             Permissions: microphone audio, paste-at-cursor, push-to-talk hotkey.
 
-            Open source, based on Parakey by Richard Courtman.
-            github.com/shlgd/SuperDictate · MIT licensed
+            Created by m0rvey, based on SuperDictate and Parakey.
+            github.com/m0rvey/ultradictate · MIT licensed
             """
         // Use our app icon instead of NSAlert's default exclamation
         // mark. .icns lives in Contents/Resources/Parakey.icns;
