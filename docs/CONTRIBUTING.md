@@ -6,10 +6,16 @@ newer.
 
 Before opening a pull request, run:
 
+### macOS:
 ```bash
 ./scripts/check.sh
 swift run -c debug --package-path swift UltraDictate --self-test all
 ./scripts/build-app.sh ./dist/UltraDictate.app
+```
+
+### Windows:
+```cmd
+dotnet build windows/UltraDictate.Windows/UltraDictate.Windows.csproj -c Release
 ```
 
 The release version in `swift/Info.plist` and `install.sh` must match. Release

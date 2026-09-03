@@ -4,15 +4,17 @@
 
 **Lightning-fast, 100% on-device and private speech-to-text dictation for macOS and Windows.**
 
-[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20(M1--M4)-000000?style=flat-square&logo=apple&logoColor=white)](https://www.apple.com/macos/)
-[![Windows](https://img.shields.io/badge/Windows-10%2F11%20(x64)-0078D6?style=flat-square&logo=windows&logoColor=white)](../windows/)
+[![Release](https://img.shields.io/github/v/release/m0rvey/ultradictate?style=flat-square&color=2ea44f&label=Release)](https://github.com/m0rvey/ultradictate/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/m0rvey/ultradictate/build.yml?branch=main&style=flat-square&label=CI)](https://github.com/m0rvey/ultradictate/actions/workflows/build.yml)
+[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20(M1--M4)-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/m0rvey/ultradictate/releases/download/v1.0.0/UltraDictate-macOS-arm64.zip)
+[![Windows](https://img.shields.io/badge/Windows-10%2F11%20(x64)-0078D6?style=flat-square&logo=windows&logoColor=white)](https://github.com/m0rvey/ultradictate/releases/download/v1.0.0/UltraDictate-Windows-x64.zip)
 [![Swift](https://img.shields.io/badge/Swift-6.0-F05138?style=flat-square&logo=swift&logoColor=white)](https://swift.org/)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![DirectML](https://img.shields.io/badge/DirectML-Hardware%20Accelerated-0078D4?style=flat-square)](../windows/)
 [![CoreML](https://img.shields.io/badge/CoreML-Apple%20Neural%20Engine-FF6F00?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/coreml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](../LICENSE)
 
-[Features](#-key-features) • [Installation (macOS)](#-installation-macos) • [Installation (Windows)](#-installation-windows) • [Hotkeys](#-hotkeys) • [Building](#-building-from-source) • [Русская версия](README.md)
+[Features](#-key-features) • [Download Releases](https://github.com/m0rvey/ultradictate/releases/tag/v1.0.0) • [Installation (macOS)](#-installation-macos) • [Installation (Windows)](#-installation-windows) • [Hotkeys](#-hotkeys) • [Building](#-building-from-source) • [Русская версия](../README.md)
 
 </div>
 
