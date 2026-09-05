@@ -9,7 +9,7 @@
     <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <AssemblyName>UltraDictate</AssemblyName>
     <RootNamespace>UltraDictate.Windows</RootNamespace>
-    <Version>1.0.1</Version>
+    <Version>1.0.4</Version>
     <Authors>m0rvey</Authors>
     <Company>m0rvey</Company>
     <Product>UltraDictate for Windows</Product>
