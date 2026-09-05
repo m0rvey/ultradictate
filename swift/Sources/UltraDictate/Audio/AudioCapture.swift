@@ -431,6 +431,7 @@ final class AudioCapture: @unchecked Sendable {
     }
 
     private func installCaptureTap(on input: AVAudioInputNode) throws -> AVAudioFormat {
+        input.removeTap(onBus: 0)
         let inputFormat = input.inputFormat(forBus: 0)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             throw NSError(

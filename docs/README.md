@@ -4,7 +4,7 @@
 
 **Сверхбыстрая, полностью локальная и приватная система голосовой диктовки для macOS и Windows.**
 
-[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20(M1--M4)-000000?style=flat-square&logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20(M1--M5%2C%20A18%20Pro)-000000?style=flat-square&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Windows](https://img.shields.io/badge/Windows-10%2F11%20(x64)-0078D6?style=flat-square&logo=windows&logoColor=white)](windows/)
 [![Swift](https://img.shields.io/badge/Swift-6.0-F05138?style=flat-square&logo=swift&logoColor=white)](https://swift.org/)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
@@ -41,7 +41,7 @@
 ## 🚀 Быстрая установка (macOS)
 
 ### Требования
-- Mac с процессором **Apple Silicon** (M1/M2/M3/M4 или A18 Pro).
+- Mac с процессором **Apple Silicon** (M1-M5, A18 Pro).
 - **macOS 14 (Sonoma)** или новее.
 
 ```bash

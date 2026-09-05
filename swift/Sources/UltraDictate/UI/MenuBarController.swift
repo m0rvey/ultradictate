@@ -463,6 +463,10 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
                            selector: #selector(externalSettingsDidChange(_:)),
                            name: SETTINGS_CHANGED_NOTIFICATION,
                            object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(microphonePermissionDidChange(_:)),
+                                               name: .microphonePermissionChanged,
+                                               object: nil)
     }
 
     private func removeHotkeyCaptureObservers() {
@@ -472,6 +476,25 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         center.removeObserver(self, name: HOTKEY_CAPTURE_BEGIN_NOTIFICATION, object: nil)
         center.removeObserver(self, name: HOTKEY_CAPTURE_END_NOTIFICATION, object: nil)
         center.removeObserver(self, name: SETTINGS_CHANGED_NOTIFICATION, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .microphonePermissionChanged, object: nil)
+    }
+
+    @objc private func microphonePermissionDidChange(_ notification: Notification) {
+        guard !isTerminating else { return }
+        log("Microphone permission notification received; checking readiness")
+        if let timer = permissionReadinessTimer {
+            permissionReadinessTimerFired(timer)
+        } else {
+            let missing = missingPermissions()
+            if missing.isEmpty {
+                if !isCoreRuntimeReady && startupTask == nil && !isBusy {
+                    startStartup(reason: "microphone permission granted")
+                } else {
+                    completeReadinessIfPossible(reason: "microphone permission granted")
+                }
+            }
+            rebuildMenu()
+        }
     }
 
     @objc private func externalSettingsDidChange(_ notification: Notification) {
@@ -1164,6 +1187,9 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 permClickCount.removeAll()
                 stopPermissionReadinessMonitor()
                 rebuildMenu()
+                if startupTask == nil && !isBusy && !isTerminating {
+                    startStartup(reason: "permissions granted")
+                }
                 return
             }
             if logPermissionReadinessWait(missing) {

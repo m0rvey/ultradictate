@@ -351,12 +351,20 @@ func hotkeySetupRowState(isReady: Bool,
                                   buttonTitle: nil)
 }
 
+extension Notification.Name {
+    static let microphonePermissionChanged = Notification.Name("UltraDictateMicrophonePermissionChanged")
+}
+
 @MainActor
 final class Permissions {
     static func isGranted(_ p: Permission) -> Bool {
         switch p {
         case .microphone:
-            return AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+            if #available(macOS 14.0, *) {
+                return AVAudioApplication.shared.recordPermission == .granted
+            } else {
+                return AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+            }
         case .accessibility:
             return AXIsProcessTrusted()
         case .inputMonitoring:
@@ -370,12 +378,29 @@ final class Permissions {
     static func request(_ p: Permission) {
         switch p {
         case .microphone:
-            let status = AVCaptureDevice.authorizationStatus(for: .audio)
-            if status == .denied {
-                openSettings(for: p)
+            if #available(macOS 14.0, *) {
+                let status = AVAudioApplication.shared.recordPermission
+                if status == .denied {
+                    openSettings(for: p)
+                } else if status == .undetermined {
+                    AVAudioApplication.requestRecordPermission { granted in
+                        Task { @MainActor in
+                            log("Microphone request (AVAudioApplication): granted=\(granted)")
+                            NotificationCenter.default.post(name: .microphonePermissionChanged, object: nil)
+                        }
+                    }
+                }
             } else {
-                AVCaptureDevice.requestAccess(for: .audio) { granted in
-                    log("Microphone request: granted=\(granted)")
+                let status = AVCaptureDevice.authorizationStatus(for: .audio)
+                if status == .denied {
+                    openSettings(for: p)
+                } else {
+                    AVCaptureDevice.requestAccess(for: .audio) { granted in
+                        Task { @MainActor in
+                            log("Microphone request: granted=\(granted)")
+                            NotificationCenter.default.post(name: .microphonePermissionChanged, object: nil)
+                        }
+                    }
                 }
             }
         case .accessibility:
