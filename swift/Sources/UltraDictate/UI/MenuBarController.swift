@@ -719,6 +719,13 @@ final class ParakeyApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 await recoverPendingDictationsAfterStartup()
                 guard !Task.isCancelled, !isTerminating else { return }
 
+                guard Permissions.isGranted(.microphone) else {
+                    log("startup: waiting for microphone permission before initializing audio capture")
+                    startPermissionReadinessMonitor(reason: "waiting for microphone")
+                    rebuildMenu()
+                    return
+                }
+
                 stage = .audioInput
                 setStartupPhase("audio", title: "Starting audio input…")
 

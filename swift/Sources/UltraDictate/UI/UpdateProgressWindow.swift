@@ -44,7 +44,7 @@ func manualUpdateCheckFailureText(_ failure: UpdateCheckFailure) -> String {
 }
 
 enum UpdateCheck {
-    private static let githubReleaseURLPathPrefix = "/shlgd/SuperDictate/releases/tag/"
+    private static let githubReleaseURLPathPrefix = "/m0rvey/ultradictate/releases/tag/"
     static let maxReleaseResponseBytes = 512 * 1024
 
     static func fetchLatest() async -> Result<GitHubRelease, UpdateCheckFailure> {
@@ -236,7 +236,7 @@ enum SuperDictateUpdateInstaller {
             throw SuperDictateUpdateInstallerError.appNotWritable
         }
 
-        let archiveURL = URL(string: "https://github.com/shlgd/SuperDictate/releases/download/v\(manifest.version)/SuperDictate.zip")!
+        let archiveURL = URL(string: "https://github.com/m0rvey/ultradictate/releases/download/v\(manifest.version)/UltraDictate-macOS-arm64.zip")!
         var request = URLRequest(url: archiveURL)
         request.setValue("superdictate-in-app-update", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 60
@@ -254,8 +254,8 @@ enum SuperDictateUpdateInstaller {
         }
 
         let workDirectory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("SuperDictate-update-\(UUID().uuidString)", isDirectory: true)
-        let archiveFile = workDirectory.appendingPathComponent("SuperDictate.zip")
+            .appendingPathComponent("UltraDictate-update-\(UUID().uuidString)", isDirectory: true)
+        let archiveFile = workDirectory.appendingPathComponent("UltraDictate-macOS-arm64.zip")
         let extractedDirectory = workDirectory.appendingPathComponent("release", isDirectory: true)
         do {
             try FileManager.default.createDirectory(at: extractedDirectory,
@@ -276,7 +276,7 @@ enum SuperDictateUpdateInstaller {
             throw SuperDictateUpdateInstallerError.extractionFailed(extraction.output)
         }
 
-        let stagedAppURL = extractedDirectory.appendingPathComponent("SuperDictate.app",
+        let stagedAppURL = extractedDirectory.appendingPathComponent("UltraDictate.app",
                                                                       isDirectory: true)
         do {
             try validateApp(at: stagedAppURL, expectedVersion: manifest.version)
@@ -303,14 +303,14 @@ enum SuperDictateUpdateInstaller {
     static func validateApp(at appURL: URL, expectedVersion: String) throws {
         let fileManager = FileManager.default
         let infoURL = appURL.appendingPathComponent("Contents/Info.plist")
-        let executableURL = appURL.appendingPathComponent("Contents/MacOS/SuperDictate")
-        guard appURL.lastPathComponent == "SuperDictate.app",
+        let executableURL = appURL.appendingPathComponent("Contents/MacOS/UltraDictate")
+        guard appURL.lastPathComponent == "UltraDictate.app",
               fileManager.fileExists(atPath: infoURL.path),
               fileManager.isExecutableFile(atPath: executableURL.path),
               let infoData = try? Data(contentsOf: infoURL),
               let info = try? PropertyListSerialization.propertyList(from: infoData,
                                                                      format: nil) as? [String: Any],
-              info["CFBundleIdentifier"] as? String == "com.local.superdictate",
+              info["CFBundleIdentifier"] as? String == "com.m0rvey.ultradictate",
               info["CFBundleShortVersionString"] as? String == expectedVersion else {
             throw SuperDictateUpdateInstallerError.invalidBundle("неверный идентификатор или версия")
         }
@@ -422,9 +422,9 @@ func updateHelperScript(pid: pid_t,
     APP_PATH=\(quotedAppPath)
     BREW_BIN=\(quotedBrew)
     RELEASES_URL=\(quotedReleases)
-    CASK_TAP='shlgd/superdictate'
-    CASK_TOKEN='shlgd/superdictate/superdictate'
-    CASK_INSTALLED_TOKEN='parakey'
+    CASK_TAP='m0rvey/ultradictate'
+    CASK_TOKEN='m0rvey/ultradictate/ultradictate'
+    CASK_INSTALLED_TOKEN='ultradictate'
     APP_DIR="$(dirname "$APP_PATH")"
     SCRIPT_PATH="$0"
 
@@ -852,8 +852,8 @@ func superDictateDirectUpdateHelperScript(pid: pid_t,
     }
 
     verify_app() {
-        [ -x "$APP_PATH/Contents/MacOS/SuperDictate" ] || return 1
-        [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST" 2>/dev/null)" = "com.local.superdictate" ] || return 1
+        [ -x "$APP_PATH/Contents/MacOS/UltraDictate" ] || return 1
+        [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST" 2>/dev/null)" = "com.m0rvey.ultradictate" ] || return 1
         [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST" 2>/dev/null)" = "$TARGET_VERSION" ] || return 1
         /usr/bin/codesign --verify --deep --strict "$APP_PATH"
     }

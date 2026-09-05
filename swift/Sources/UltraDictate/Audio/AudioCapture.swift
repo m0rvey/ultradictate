@@ -237,6 +237,14 @@ final class AudioCapture: @unchecked Sendable {
     private var recoveryJournal: PendingDictationJournal?
     private var engineStarted = false
     private var configurationObserver: NSObjectProtocol?
+    private var isTapInstalled = false
+
+    private func removeTapSafely(from node: AVAudioNode) {
+        if isTapInstalled {
+            node.removeTap(onBus: 0)
+            isTapInstalled = false
+        }
+    }
 
     var onConfigurationChange: (@Sendable () -> Void)?
 
@@ -281,7 +289,7 @@ final class AudioCapture: @unchecked Sendable {
             engine.prepare()
             try engine.start()
         } catch {
-            input.removeTap(onBus: 0)
+            removeTapSafely(from: input)
             clearStoppedCaptureState()
             resetEngineInstance()
             throw error
@@ -308,7 +316,7 @@ final class AudioCapture: @unchecked Sendable {
         guard isEngineStarted else { return false }
 
         let input = engine.inputNode
-        input.removeTap(onBus: 0)
+        removeTapSafely(from: input)
         engine.stop()
 
         var didInstallTap = false
@@ -321,7 +329,7 @@ final class AudioCapture: @unchecked Sendable {
             return true
         } catch {
             if didInstallTap {
-                input.removeTap(onBus: 0)
+                removeTapSafely(from: input)
             }
             lock.lock()
             converter = nil
@@ -340,7 +348,7 @@ final class AudioCapture: @unchecked Sendable {
         clearStoppedCaptureState()
 
         guard wasEngineStarted else { return }
-        engine.inputNode.removeTap(onBus: 0)
+        removeTapSafely(from: engine.inputNode)
         resetEngineInstance()
     }
 
@@ -362,6 +370,7 @@ final class AudioCapture: @unchecked Sendable {
     }
 
     private func resetEngineInstance() {
+        isTapInstalled = false
         engine.stop()
         engine.reset()
         engine = AVAudioEngine()
@@ -431,7 +440,7 @@ final class AudioCapture: @unchecked Sendable {
     }
 
     private func installCaptureTap(on input: AVAudioInputNode) throws -> AVAudioFormat {
-        input.removeTap(onBus: 0)
+        removeTapSafely(from: input)
         let inputFormat = input.inputFormat(forBus: 0)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             throw NSError(
@@ -472,6 +481,7 @@ final class AudioCapture: @unchecked Sendable {
         input.installTap(onBus: 0, bufferSize: 512, format: inputFormat) { [weak self] buffer, _ in
             self?.handleTap(buffer: buffer, target: targetFormat)
         }
+        isTapInstalled = true
 
         let mixLabel = mixToMono ? " via manual mono mix" : ""
         log("AudioCapture: input \(inputFormat.sampleRate) Hz \(inputFormat.channelCount)ch\(mixLabel) → \(targetFormat.sampleRate) Hz mono")
