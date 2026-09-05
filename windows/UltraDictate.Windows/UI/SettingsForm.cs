@@ -85,12 +85,13 @@ public class SettingsForm : Form
         var badgeLabel = new Label
         {
             Text = $"● {activeModelName}",
-            Location = new Point(Width - 195, 24),
+            Location = new Point(headerPanel.ClientSize.Width - 180, 24),
             Size = new Size(155, 26),
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
             BackColor = Color.FromArgb(26, 44, 76),
-            ForeColor = Color.FromArgb(88, 166, 255)
+            ForeColor = Color.FromArgb(88, 166, 255),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
 
         headerPanel.Controls.Add(titleLabel);
