@@ -44,7 +44,10 @@ func manualUpdateCheckFailureText(_ failure: UpdateCheckFailure) -> String {
 }
 
 enum UpdateCheck {
-    private static let githubReleaseURLPathPrefix = "/m0rvey/ultradictate/releases/tag/"
+    private static let validReleaseURLPathPrefixes = [
+        "/m0rvey/ultradictate/releases/tag/",
+        "/shlgd/SuperDictate/releases/tag/"
+    ]
     static let maxReleaseResponseBytes = 512 * 1024
 
     static func fetchLatest() async -> Result<GitHubRelease, UpdateCheckFailure> {
@@ -122,7 +125,7 @@ enum UpdateCheck {
               components.password == nil,
               components.query == nil,
               components.fragment == nil,
-              components.path == "\(githubReleaseURLPathPrefix)\(expectedTag)" else {
+              validReleaseURLPathPrefixes.contains(where: { components.path == "\($0)\(expectedTag)" }) else {
             return GITHUB_RELEASES_PAGE.absoluteString
         }
         return trimmed
@@ -422,9 +425,9 @@ func updateHelperScript(pid: pid_t,
     APP_PATH=\(quotedAppPath)
     BREW_BIN=\(quotedBrew)
     RELEASES_URL=\(quotedReleases)
-    CASK_TAP='m0rvey/ultradictate'
-    CASK_TOKEN='m0rvey/ultradictate/ultradictate'
-    CASK_INSTALLED_TOKEN='ultradictate'
+    CASK_TAP='shlgd/superdictate'
+    CASK_TOKEN='shlgd/superdictate/superdictate'
+    CASK_INSTALLED_TOKEN='parakey'
     APP_DIR="$(dirname "$APP_PATH")"
     SCRIPT_PATH="$0"
 

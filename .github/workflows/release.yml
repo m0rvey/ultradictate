@@ -92,18 +92,6 @@ jobs:
             "sha256": "$SHA"
           }
           EOF
-      - name: Update manifest in repository
-        uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Commit updated manifest to main
-        run: |
-          cp release-assets/update.json update.json
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add update.json
-          git commit -m "chore(release): update update.json for ${{ github.ref_name != '' && github.ref_name || inputs.tag }} [skip ci]" || echo "No manifest change"
-          git push origin main || echo "Failed to push manifest update"
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
