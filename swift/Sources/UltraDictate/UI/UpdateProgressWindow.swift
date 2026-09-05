@@ -279,8 +279,11 @@ enum SuperDictateUpdateInstaller {
             throw SuperDictateUpdateInstallerError.extractionFailed(extraction.output)
         }
 
-        let stagedAppURL = extractedDirectory.appendingPathComponent("UltraDictate.app",
+        let ultraAppURL = extractedDirectory.appendingPathComponent("UltraDictate.app",
                                                                       isDirectory: true)
+        let superAppURL = extractedDirectory.appendingPathComponent("SuperDictate.app",
+                                                                      isDirectory: true)
+        let stagedAppURL = FileManager.default.fileExists(atPath: ultraAppURL.path) ? ultraAppURL : superAppURL
         do {
             try validateApp(at: stagedAppURL, expectedVersion: manifest.version)
         } catch let error as SuperDictateUpdateInstallerError {
@@ -306,14 +309,21 @@ enum SuperDictateUpdateInstaller {
     static func validateApp(at appURL: URL, expectedVersion: String) throws {
         let fileManager = FileManager.default
         let infoURL = appURL.appendingPathComponent("Contents/Info.plist")
-        let executableURL = appURL.appendingPathComponent("Contents/MacOS/UltraDictate")
-        guard appURL.lastPathComponent == "UltraDictate.app",
+        let ultraExecutableURL = appURL.appendingPathComponent("Contents/MacOS/UltraDictate")
+        let superExecutableURL = appURL.appendingPathComponent("Contents/MacOS/SuperDictate")
+        let hasExecutable = fileManager.isExecutableFile(atPath: ultraExecutableURL.path) ||
+                            fileManager.isExecutableFile(atPath: superExecutableURL.path)
+        let isValidName = appURL.lastPathComponent == "UltraDictate.app" ||
+                          appURL.lastPathComponent == "SuperDictate.app"
+
+        guard isValidName,
               fileManager.fileExists(atPath: infoURL.path),
-              fileManager.isExecutableFile(atPath: executableURL.path),
+              hasExecutable,
               let infoData = try? Data(contentsOf: infoURL),
               let info = try? PropertyListSerialization.propertyList(from: infoData,
                                                                      format: nil) as? [String: Any],
-              info["CFBundleIdentifier"] as? String == "com.m0rvey.ultradictate",
+              let bundleId = info["CFBundleIdentifier"] as? String,
+              (bundleId == "com.m0rvey.ultradictate" || bundleId == "com.local.superdictate"),
               info["CFBundleShortVersionString"] as? String == expectedVersion else {
             throw SuperDictateUpdateInstallerError.invalidBundle("неверный идентификатор или версия")
         }
@@ -855,8 +865,14 @@ func superDictateDirectUpdateHelperScript(pid: pid_t,
     }
 
     verify_app() {
-        [ -x "$APP_PATH/Contents/MacOS/UltraDictate" ] || return 1
-        [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST" 2>/dev/null)" = "com.m0rvey.ultradictate" ] || return 1
+        if [ ! -x "$APP_PATH/Contents/MacOS/UltraDictate" ] && [ ! -x "$APP_PATH/Contents/MacOS/SuperDictate" ]; then
+            return 1
+        fi
+        local bundle_id
+        bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST" 2>/dev/null || true)"
+        if [ "$bundle_id" != "com.m0rvey.ultradictate" ] && [ "$bundle_id" != "com.local.superdictate" ]; then
+            return 1
+        fi
         [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST" 2>/dev/null)" = "$TARGET_VERSION" ] || return 1
         /usr/bin/codesign --verify --deep --strict "$APP_PATH"
     }
