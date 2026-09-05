@@ -29,6 +29,19 @@ static class Program
         try
         {
             var settings = SettingsManager.Load();
+
+            // Check if first-run setup is required
+            if (!settings.FirstRunCompleted)
+            {
+                using var setupForm = new ModelSetupForm(settings);
+                var result = setupForm.ShowDialog();
+                if (result != DialogResult.OK)
+                {
+                    // User closed setup window before completing
+                    return;
+                }
+            }
+
             using var context = new TrayApplicationContext(settings);
             Application.Run(context);
         }

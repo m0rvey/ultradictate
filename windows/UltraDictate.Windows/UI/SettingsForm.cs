@@ -21,6 +21,9 @@ public class SettingsForm : Form
     private CheckBox _trailingPeriodCheck = null!;
 
     private ComboBox _whisperModelCombo = null!;
+    private Label _smallStatusLabel = null!;
+    private Label _baseStatusLabel = null!;
+
     private CheckBox _aiCleanupCheck = null!;
     private TextBox _aiBaseUrlText = null!;
     private TextBox _aiModelText = null!;
@@ -37,8 +40,8 @@ public class SettingsForm : Form
 
     private void InitializeComponent()
     {
-        Text = "UltraDictate — Settings";
-        Size = new Size(640, 600);
+        Text = "UltraDictate — Настройки";
+        Size = new Size(680, 620);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -47,11 +50,11 @@ public class SettingsForm : Form
         ForeColor = Color.FromArgb(240, 246, 252);
         Font = new Font("Segoe UI", 9.5f);
 
-        // Top Header Banner
+        // 1. Top Header Banner
         var headerPanel = new Panel
         {
             Dock = DockStyle.Top,
-            Height = 70,
+            Height = 75,
             BackColor = Color.FromArgb(22, 27, 34)
         };
         headerPanel.Paint += (s, e) =>
@@ -62,27 +65,28 @@ public class SettingsForm : Form
 
         var titleLabel = new Label
         {
-            Text = "UltraDictate Preferences",
+            Text = "⚙️ Настройки UltraDictate",
             Location = new Point(24, 14),
             AutoSize = true,
-            Font = new Font("Segoe UI", 12.5f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 13f, FontStyle.Bold),
             ForeColor = Color.White
         };
 
         var subtitleLabel = new Label
         {
-            Text = "Local Whisper AI Speech Recognition • 100% On-Device & Private",
-            Location = new Point(24, 40),
+            Text = "Локальное распознавание Whisper AI • 100% автономно и конфиденциально",
+            Location = new Point(26, 42),
             AutoSize = true,
-            Font = new Font("Segoe UI", 8.5f),
+            Font = new Font("Segoe UI", 8.8f),
             ForeColor = Color.FromArgb(139, 148, 158)
         };
 
+        string activeModelName = _settings.WhisperModelType == "Base" ? "Whisper Base" : "Whisper Small";
         var badgeLabel = new Label
         {
-            Text = "Whisper Ready",
-            Location = new Point(Width - 165, 22),
-            Size = new Size(120, 26),
+            Text = $"● {activeModelName}",
+            Location = new Point(Width - 195, 24),
+            Size = new Size(155, 26),
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
             BackColor = Color.FromArgb(26, 44, 76),
@@ -93,13 +97,13 @@ public class SettingsForm : Form
         headerPanel.Controls.Add(subtitleLabel);
         headerPanel.Controls.Add(badgeLabel);
 
-        // Modern Tab Navigation
+        // 2. Modern Tab Navigation
         var tabControl = new TabControl
         {
             Dock = DockStyle.Fill,
-            Padding = new Point(20, 10),
+            Padding = new Point(22, 10),
             DrawMode = TabDrawMode.OwnerDrawFixed,
-            ItemSize = new Size(170, 38),
+            ItemSize = new Size(190, 40),
             SizeMode = TabSizeMode.Fixed
         };
 
@@ -132,23 +136,23 @@ public class SettingsForm : Form
             g.DrawString(text, font, textBrush, rect, sf);
         };
 
-        var generalTab = new TabPage("Dictation & Input") { BackColor = Color.FromArgb(13, 17, 23) };
-        var aiTab = new TabPage("AI Post-Processing") { BackColor = Color.FromArgb(13, 17, 23) };
-        var modelTab = new TabPage("Speech Model") { BackColor = Color.FromArgb(13, 17, 23) };
+        var generalTab = new TabPage("Диктовка и ввод") { BackColor = Color.FromArgb(13, 17, 23) };
+        var modelTab = new TabPage("Модель Whisper") { BackColor = Color.FromArgb(13, 17, 23) };
+        var aiTab = new TabPage("AI Постобработка") { BackColor = Color.FromArgb(13, 17, 23) };
 
         SetupGeneralTab(generalTab);
-        SetupAITab(aiTab);
         SetupModelTab(modelTab);
+        SetupAITab(aiTab);
 
         tabControl.TabPages.Add(generalTab);
         tabControl.TabPages.Add(modelTab);
         tabControl.TabPages.Add(aiTab);
 
-        // Bottom Action Bar
+        // 3. Bottom Action Bar
         var buttonPanel = new Panel
         {
             Dock = DockStyle.Bottom,
-            Height = 64,
+            Height = 66,
             BackColor = Color.FromArgb(22, 27, 34)
         };
         buttonPanel.Paint += (s, e) =>
@@ -159,10 +163,10 @@ public class SettingsForm : Form
 
         var saveButton = new Button
         {
-            Text = "Save Changes",
+            Text = "Сохранить настройки",
             DialogResult = DialogResult.OK,
-            Size = new Size(130, 36),
-            Location = new Point(Width - 175, 14),
+            Size = new Size(165, 38),
+            Location = new Point(Width - 200, 14),
             BackColor = Color.FromArgb(35, 134, 54), // GitHub green
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
@@ -174,10 +178,10 @@ public class SettingsForm : Form
 
         var cancelButton = new Button
         {
-            Text = "Cancel",
+            Text = "Отмена",
             DialogResult = DialogResult.Cancel,
-            Size = new Size(95, 36),
-            Location = new Point(Width - 285, 14),
+            Size = new Size(95, 38),
+            Location = new Point(Width - 310, 14),
             BackColor = Color.FromArgb(33, 38, 45),
             ForeColor = Color.FromArgb(201, 209, 217),
             FlatStyle = FlatStyle.Flat,
@@ -196,12 +200,12 @@ public class SettingsForm : Form
 
     private void SetupGeneralTab(TabPage tab)
     {
-        int top = 20;
+        int top = 16;
 
         var card = new Panel
         {
             Location = new Point(20, top),
-            Size = new Size(580, 370),
+            Size = new Size(625, 380),
             BackColor = Color.FromArgb(22, 27, 34)
         };
         card.Paint += (s, e) =>
@@ -212,47 +216,53 @@ public class SettingsForm : Form
 
         int innerTop = 18;
 
-        card.Controls.Add(CreateLabel("Push-to-Talk Hotkey:", 24, innerTop));
+        card.Controls.Add(CreateLabel("Горячая клавиша диктовки (Push-to-Talk):", 24, innerTop));
         _hotkeyCombo = new ComboBox
         {
             Location = new Point(24, innerTop + 24),
-            Width = 280,
+            Width = 320,
             DropDownStyle = ComboBoxStyle.DropDownList,
             BackColor = Color.FromArgb(13, 17, 23),
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat
         };
-        _hotkeyCombo.Items.AddRange(new object[] { "Right Control", "Right Alt", "Caps Lock", "F8" });
-        _hotkeyCombo.SelectedItem = _settings.Hotkey == "RightAlt" ? "Right Alt" : "Right Control";
+        _hotkeyCombo.Items.AddRange(new object[] { "Правый Ctrl (Right Control) — По умолчанию", "Правый Alt (Right Alt)", "Caps Lock", "F8" });
+        _hotkeyCombo.SelectedIndex = _settings.Hotkey switch
+        {
+            "RightAlt" => 1,
+            "CapsLock" => 2,
+            "F8" => 3,
+            _ => 0
+        };
         card.Controls.Add(_hotkeyCombo);
 
         innerTop += 66;
-        card.Controls.Add(CreateLabel("Trigger Mode:", 24, innerTop));
+        card.Controls.Add(CreateLabel("Режим срабатывания клавиши:", 24, innerTop));
         _triggerModeCombo = new ComboBox
         {
             Location = new Point(24, innerTop + 24),
-            Width = 280,
+            Width = 320,
             DropDownStyle = ComboBoxStyle.DropDownList,
             BackColor = Color.FromArgb(13, 17, 23),
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat
         };
-        _triggerModeCombo.Items.AddRange(new object[] { "Hold to Dictate (Push-to-Talk)", "Press to Toggle (Start / Stop)" });
+        _triggerModeCombo.Items.AddRange(new object[] { "Удерживать для записи (Hold to Dictate)", "Нажать для переключения (Start / Stop Toggle)" });
         _triggerModeCombo.SelectedIndex = _settings.TriggerMode == "PressToToggle" ? 1 : 0;
         card.Controls.Add(_triggerModeCombo);
 
         innerTop += 66;
-        card.Controls.Add(CreateLabel("Recognition Language:", 24, innerTop));
+        card.Controls.Add(CreateLabel("Язык распознавания речи:", 24, innerTop));
         _languageCombo = new ComboBox
         {
             Location = new Point(24, innerTop + 24),
-            Width = 280,
+            Width = 320,
             DropDownStyle = ComboBoxStyle.DropDownList,
             BackColor = Color.FromArgb(13, 17, 23),
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat
         };
-        _languageCombo.Items.AddRange(new object[] { "Auto-detect (Recommended)", "Russian (ru)", "English (en)" });
+        _languageCombo.Items.AddRange(new object[] { "Автоопределение (Рекомендуется)", "Русский (ru)", "English (en)" });
         _languageCombo.SelectedIndex = _settings.Language switch
         {
             "ru" => 1,
@@ -262,26 +272,26 @@ public class SettingsForm : Form
         card.Controls.Add(_languageCombo);
 
         innerTop += 66;
-        card.Controls.Add(CreateLabel("Text Insertion Method:", 24, innerTop));
+        card.Controls.Add(CreateLabel("Способ вставки текста в приложения:", 24, innerTop));
         _insertionModeCombo = new ComboBox
         {
             Location = new Point(24, innerTop + 24),
-            Width = 280,
+            Width = 320,
             DropDownStyle = ComboBoxStyle.DropDownList,
             BackColor = Color.FromArgb(13, 17, 23),
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat
         };
-        _insertionModeCombo.Items.AddRange(new object[] { "Clipboard Paste (Instant & Universal)", "Direct Keystrokes (SendInput Unicode)" });
+        _insertionModeCombo.Items.AddRange(new object[] { "Быстрая вставка буфером обмена (Рекомендуется)", "Прямой ввод символов (SendInput Unicode)" });
         _insertionModeCombo.SelectedIndex = _settings.InsertionMode == "DirectTyping" ? 1 : 0;
         card.Controls.Add(_insertionModeCombo);
 
         innerTop += 68;
         _trailingPeriodCheck = new CheckBox
         {
-            Text = "Automatically remove trailing period from dictated phrases",
+            Text = "Автоматически удалять точку на конце надиктованной фразы",
             Location = new Point(24, innerTop),
-            Width = 500,
+            Width = 530,
             Checked = _settings.RemoveTrailingPeriod,
             ForeColor = Color.FromArgb(201, 209, 217),
             Cursor = Cursors.Hand
@@ -293,12 +303,12 @@ public class SettingsForm : Form
 
     private void SetupModelTab(TabPage tab)
     {
-        int top = 20;
+        int top = 16;
 
         var card = new Panel
         {
             Location = new Point(20, top),
-            Size = new Size(580, 370),
+            Size = new Size(625, 380),
             BackColor = Color.FromArgb(22, 27, 34)
         };
         card.Paint += (s, e) =>
@@ -311,20 +321,20 @@ public class SettingsForm : Form
 
         var modelTitle = new Label
         {
-            Text = "Local Whisper AI Speech Engine",
+            Text = "🧠 Локальные модели речи Whisper",
             Location = new Point(24, innerTop),
             AutoSize = true,
-            Font = new Font("Segoe UI", 11.5f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 12f, FontStyle.Bold),
             ForeColor = Color.White
         };
         card.Controls.Add(modelTitle);
 
-        innerTop += 32;
-        card.Controls.Add(CreateLabel("Model Profile:", 24, innerTop));
+        innerTop += 34;
+        card.Controls.Add(CreateLabel("Активный профиль модели:", 24, innerTop));
         _whisperModelCombo = new ComboBox
         {
             Location = new Point(24, innerTop + 24),
-            Width = 380,
+            Width = 420,
             DropDownStyle = ComboBoxStyle.DropDownList,
             BackColor = Color.FromArgb(13, 17, 23),
             ForeColor = Color.White,
@@ -332,8 +342,8 @@ public class SettingsForm : Form
         };
         _whisperModelCombo.Items.AddRange(new object[]
         {
-            "Whisper Small (~465 MB) — High Accuracy (Mac-grade quality)",
-            "Whisper Base (~140 MB) — Fast & Lightweight"
+            "Whisper Small (~465 МБ) — Высокая точность (Качество Mac) [Рекомендуется]",
+            "Whisper Base (~140 МБ) — Быстрая и легкая для слабых ПК"
         });
         _whisperModelCombo.SelectedIndex = _settings.WhisperModelType == "Base" ? 1 : 0;
         card.Controls.Add(_whisperModelCombo);
@@ -344,47 +354,50 @@ public class SettingsForm : Form
         bool smallExists = File.Exists(smallFile) && new FileInfo(smallFile).Length > 100_000_000;
         bool baseExists = File.Exists(baseFile) && new FileInfo(baseFile).Length > 10_000_000;
 
-        var statusSmall = new Label
+        _smallStatusLabel = new Label
         {
             Text = smallExists
-                ? $"✓ Whisper Small: Installed on disk ({new FileInfo(smallFile).Length / (1024 * 1024)} MB)"
-                : "⏳ Whisper Small: In progress / ready to download (~465 MB)",
+                ? $"✓ Whisper Small: Установлена ({new FileInfo(smallFile).Length / (1024 * 1024)} МБ) • Отличное распознавание русской речи"
+                : "⏳ Whisper Small: Не загружена (нажмите кнопку ниже для загрузки)",
             Location = new Point(24, innerTop),
             AutoSize = true,
+            Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
             ForeColor = smallExists ? Color.FromArgb(63, 185, 80) : Color.FromArgb(240, 136, 62)
         };
-        card.Controls.Add(statusSmall);
+        card.Controls.Add(_smallStatusLabel);
 
         innerTop += 24;
-        var statusBase = new Label
+        _baseStatusLabel = new Label
         {
             Text = baseExists
-                ? $"✓ Whisper Base: Installed on disk ({new FileInfo(baseFile).Length / (1024 * 1024)} MB)"
-                : "⏳ Whisper Base: Ready to auto-download (~140 MB)",
+                ? $"✓ Whisper Base: Установлена ({new FileInfo(baseFile).Length / (1024 * 1024)} МБ) • Мгновенный отклик"
+                : "⏳ Whisper Base: Не загружена",
             Location = new Point(24, innerTop),
             AutoSize = true,
+            Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
             ForeColor = baseExists ? Color.FromArgb(63, 185, 80) : Color.FromArgb(139, 148, 158)
         };
-        card.Controls.Add(statusBase);
+        card.Controls.Add(_baseStatusLabel);
 
         innerTop += 38;
         var descLabel = new Label
         {
-            Text = "• Whisper Small: Delivers pristine Russian and English dictation matching macOS Apple Silicon accuracy.\n" +
-                   "• Whisper Base: Ultra-fast decoding on lower-end systems with standard vocabulary.\n" +
-                   "All inference executes 100% locally and privately on your machine.",
+            Text = "• Whisper Small: Рекомендуется для повседневного набора. Точно слышит окончания,\n" +
+                   "  пунктуацию, деловую и техническую терминологию без повторов и галлюцинаций.\n" +
+                   "• Whisper Base: Компактный вариант для ультрабыстрых коротких реплик.\n" +
+                   "Все вычисления выполняются оффлайн на вашем компьютере через AVX2/DirectML.",
             Location = new Point(24, innerTop),
-            Size = new Size(530, 60),
+            Size = new Size(570, 70),
             ForeColor = Color.FromArgb(139, 148, 158)
         };
         card.Controls.Add(descLabel);
 
-        innerTop += 75;
+        innerTop += 80;
         var openFolderButton = new Button
         {
-            Text = "📁 Open Models Folder",
+            Text = "📁 Открыть папку моделей",
             Location = new Point(24, innerTop),
-            Size = new Size(180, 36),
+            Size = new Size(200, 36),
             BackColor = Color.FromArgb(33, 38, 45),
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
@@ -411,12 +424,12 @@ public class SettingsForm : Form
 
     private void SetupAITab(TabPage tab)
     {
-        int top = 20;
+        int top = 16;
 
         var card = new Panel
         {
             Location = new Point(20, top),
-            Size = new Size(580, 370),
+            Size = new Size(625, 380),
             BackColor = Color.FromArgb(22, 27, 34)
         };
         card.Paint += (s, e) =>
@@ -425,13 +438,13 @@ public class SettingsForm : Form
             e.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
         };
 
-        int innerTop = 18;
+        int innerTop = 16;
 
         _aiCleanupCheck = new CheckBox
         {
-            Text = "Enable AI Post-Processing Cleanup (Local Ollama / LM Studio)",
+            Text = "Включить AI Постобработку (исправление грамматики и пунктуации через LLM)",
             Location = new Point(24, innerTop),
-            Width = 520,
+            Width = 570,
             Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
             Checked = _settings.EnableAICleanup,
             ForeColor = Color.White,
@@ -439,12 +452,40 @@ public class SettingsForm : Form
         };
         card.Controls.Add(_aiCleanupCheck);
 
-        innerTop += 42;
-        card.Controls.Add(CreateLabel("API Base URL (e.g. Ollama http://localhost:11434/v1):", 24, innerTop));
+        innerTop += 34;
+        card.Controls.Add(CreateLabel("Быстрые пресеты провайдеров:", 24, innerTop));
+        innerTop += 22;
+
+        var presetOllama = CreatePresetButton("🦙 Локальный Ollama", 24, innerTop, 160, () =>
+        {
+            _aiBaseUrlText.Text = "http://localhost:11434/v1";
+            _aiModelText.Text = "llama3.2";
+            _aiKeyText.Text = "";
+        });
+
+        var presetLMStudio = CreatePresetButton("🧪 Local LM Studio", 192, innerTop, 160, () =>
+        {
+            _aiBaseUrlText.Text = "http://localhost:1234/v1";
+            _aiModelText.Text = "local-model";
+            _aiKeyText.Text = "";
+        });
+
+        var presetOpenAI = CreatePresetButton("⚡ OpenAI / Cloud", 360, innerTop, 150, () =>
+        {
+            _aiBaseUrlText.Text = "https://api.openai.com/v1";
+            _aiModelText.Text = "gpt-4o-mini";
+        });
+
+        card.Controls.Add(presetOllama);
+        card.Controls.Add(presetLMStudio);
+        card.Controls.Add(presetOpenAI);
+
+        innerTop += 40;
+        card.Controls.Add(CreateLabel("Адрес API (Base URL):", 24, innerTop));
         _aiBaseUrlText = new TextBox
         {
-            Location = new Point(24, innerTop + 24),
-            Width = 520,
+            Location = new Point(24, innerTop + 22),
+            Width = 550,
             Text = _settings.AIBaseUrl,
             BackColor = Color.FromArgb(13, 17, 23),
             ForeColor = Color.White,
@@ -452,12 +493,12 @@ public class SettingsForm : Form
         };
         card.Controls.Add(_aiBaseUrlText);
 
-        innerTop += 60;
-        card.Controls.Add(CreateLabel("Model Name (e.g. llama3.2, mistral, gpt-4o-mini):", 24, innerTop));
+        innerTop += 54;
+        card.Controls.Add(CreateLabel("Название модели (Model):", 24, innerTop));
         _aiModelText = new TextBox
         {
-            Location = new Point(24, innerTop + 24),
-            Width = 520,
+            Location = new Point(24, innerTop + 22),
+            Width = 550,
             Text = _settings.AIModel,
             BackColor = Color.FromArgb(13, 17, 23),
             ForeColor = Color.White,
@@ -465,12 +506,12 @@ public class SettingsForm : Form
         };
         card.Controls.Add(_aiModelText);
 
-        innerTop += 60;
-        card.Controls.Add(CreateLabel("API Key (leave empty for local Ollama / LM Studio):", 24, innerTop));
+        innerTop += 54;
+        card.Controls.Add(CreateLabel("API Ключ (не требуется для локальных Ollama / LM Studio):", 24, innerTop));
         _aiKeyText = new TextBox
         {
-            Location = new Point(24, innerTop + 24),
-            Width = 520,
+            Location = new Point(24, innerTop + 22),
+            Width = 550,
             Text = _settings.AIApiKey,
             UseSystemPasswordChar = true,
             BackColor = Color.FromArgb(13, 17, 23),
@@ -479,12 +520,12 @@ public class SettingsForm : Form
         };
         card.Controls.Add(_aiKeyText);
 
-        innerTop += 58;
+        innerTop += 52;
         var testButton = new Button
         {
-            Text = "⚡ Test Connection",
+            Text = "⚡ Проверить подключение",
             Location = new Point(24, innerTop),
-            Size = new Size(150, 32),
+            Size = new Size(185, 32),
             BackColor = Color.FromArgb(33, 38, 45),
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
@@ -494,7 +535,7 @@ public class SettingsForm : Form
         testButton.Click += async (s, e) =>
         {
             testButton.Enabled = false;
-            _aiStatusLabel.Text = "Testing connection...";
+            _aiStatusLabel.Text = "⏳ Проверка подключения...";
             _aiStatusLabel.ForeColor = Color.FromArgb(201, 209, 217);
 
             try
@@ -504,7 +545,7 @@ public class SettingsForm : Form
                 var res = await client.GetAsync(testUrl);
                 if (res.IsSuccessStatusCode)
                 {
-                    _aiStatusLabel.Text = "✓ Connection successful!";
+                    _aiStatusLabel.Text = "✓ Подключение успешно!";
                     _aiStatusLabel.ForeColor = Color.FromArgb(63, 185, 80);
                 }
                 else
@@ -515,7 +556,7 @@ public class SettingsForm : Form
             }
             catch (Exception ex)
             {
-                _aiStatusLabel.Text = $"✗ Offline: {ex.Message}";
+                _aiStatusLabel.Text = $"✗ Недоступно: {ex.Message}";
                 _aiStatusLabel.ForeColor = Color.FromArgb(248, 81, 73);
             }
             finally
@@ -528,13 +569,31 @@ public class SettingsForm : Form
         _aiStatusLabel = new Label
         {
             Text = "",
-            Location = new Point(185, innerTop + 6),
+            Location = new Point(220, innerTop + 6),
             AutoSize = true,
             ForeColor = Color.FromArgb(139, 148, 158)
         };
         card.Controls.Add(_aiStatusLabel);
 
         tab.Controls.Add(card);
+    }
+
+    private Button CreatePresetButton(string text, int x, int y, int width, Action onClick)
+    {
+        var btn = new Button
+        {
+            Text = text,
+            Location = new Point(x, y),
+            Size = new Size(width, 28),
+            BackColor = Color.FromArgb(30, 36, 45),
+            ForeColor = Color.FromArgb(201, 209, 217),
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 8.2f),
+            Cursor = Cursors.Hand
+        };
+        btn.FlatAppearance.BorderColor = Color.FromArgb(48, 54, 61);
+        btn.Click += (s, e) => onClick();
+        return btn;
     }
 
     private void SaveAndClose()

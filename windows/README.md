@@ -1,34 +1,48 @@
 # 🪟 UltraDictate for Windows
 
-> High-performance, offline-first push-to-talk speech dictation for Windows powered by DirectML and ONNX Runtime.
+> Высокопроизводительная, 100% локальная и приватная система голосовой диктовки (Push-to-Talk) для Windows на базе Whisper AI и DirectML.
 
 ---
 
-## ⚡ Features
+## ⚡ Особенности версии для Windows
 
-- **Push-to-Talk Hotkey**: Hold `Right Control` (customizable) and speak.
-- **DirectML Hardware Acceleration**: Works across NVIDIA GeForce/RTX, AMD Radeon, Intel Arc/Iris Xe/NPU, and multi-threaded CPU fallback.
-- **Low-Latency WASAPI Capture**: Captures 16,000 Hz float mono audio directly from your default microphone.
-- **Synthesized `Ctrl+V` Paste Transaction**: Instant clipboard insertion into any focused app with automated clipboard preservation.
-- **Voice Commands**: Automatically transforms verbal commands (e.g., "новая строка" -> `\n`, "новый абзац" -> `\n\n`).
-- **AI Cleanup**: Optional integration with local Ollama (`http://localhost:11434/v1`) or cloud models (Groq, OpenAI) for grammar fixes.
-- **Zero Telemetry**: No third-party analytics or external network calls without explicit AI cleanup configuration.
+- **Мгновенный Push-to-Talk:** Зажмите `Right Control` (настраивается в настройках: `Right Alt`, `Caps Lock`, `F8`), скажите фразу — и текст мгновенно вставится в активное окно (браузер, мессенджер, IDE, текстовый процессор).
+- **Мастер первого запуска (First-Run Wizard):** Интерактивный выбор между моделями **Whisper Small (~465 МБ)** (рекомендуется, Mac-уровень точности) и **Whisper Base (~140 МБ)** (быстрая и легкая).
+- **Плавающая капсула HUD (60 FPS):** Премиальная темная акриловая капсула со скруглением 26px без перехвата фокуса ввода (`WS_EX_NOACTIVATE`) и без белых краевых пикселей.
+- **Аппаратное ускорение:** AVX2/AVX512 CPU и DirectML GPU/NPU.
+- **100% Оффлайн и Безопасность:**
+  - Захват звука через WASAPI в оперативной памяти (In-memory PCM).
+  - Никаких сетевых запросов. Ваши аудиоданные и текст никогда не покидают компьютер.
+- **Локальный AI Cleanup:** Опциональное подключение к локальному серверу **Ollama** (`http://localhost:11434/v1`) или **LM Studio** для исправления грамматики и расстановки пунктуации.
 
 ---
 
-## 🛠️ Build & Installation
+## 📦 Быстрый запуск
 
-### Requirements
-- Windows 10/11 (64-bit)
+### Готовый запуск (Без установки зависимостей)
+1. Скачайте `UltraDictate-Windows-x64.zip` из [GitHub Releases](https://github.com/m0rvey/ultradictate/releases/latest).
+2. Распакуйте архив в любую папку.
+3. Запустите `UltraDictate.exe` (все библиотеки и среда .NET 8 уже вшиты внутрь исполняемого файла).
+4. Выберите желаемую модель при первом запуске и начинайте диктовать!
+
+### Сборка из исходников
+Требования для сборки:
+- 64-битная Windows 10 или 11
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-### Quick Build
+Запустите скрипт сборки:
 ```cmd
-.\build.bat
+build.bat
 ```
-This produces a self-contained, single-file executable: `windows\dist\UltraDictate.exe`.
+Скрипт создаст единый автономный файл: `dist\UltraDictate.exe` (~89 МБ).
 
-### Install
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1
-```
+---
+
+## 📁 Расположение файлов и моделей
+
+- **Файл конфигурации:** `%APPDATA%\UltraDictate\config.json`
+- **Папка моделей Whisper:** `%APPDATA%\UltraDictate\models\`
+  - `ggml-small.bin` (~465 МБ) — Рекомендуемая модель высокой точности.
+  - `ggml-base.bin` (~140 МБ) — Базовая модель для легких задач.
+
+Вы можете в любой момент открыть папку с моделями через вкладку **«Модель Whisper»** в окне настроек приложения.

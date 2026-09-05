@@ -11,6 +11,9 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
+taskkill /F /IM UltraDictate.exe >nul 2>nul
+timeout /t 1 /nobreak >nul 2>nul
+
 cd /d "%~dp0\UltraDictate.Windows"
 dotnet restore
 if %ERRORLEVEL% neq 0 exit /b 1

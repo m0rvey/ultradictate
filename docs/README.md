@@ -4,15 +4,16 @@
 
 **Сверхбыстрая, полностью локальная и приватная система голосовой диктовки для macOS и Windows.**
 
-[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20(M1--M5%2C%20A18%20Pro)-000000?style=flat-square&logo=apple&logoColor=white)](https://www.apple.com/macos/)
-[![Windows](https://img.shields.io/badge/Windows-10%2F11%20(x64)-0078D6?style=flat-square&logo=windows&logoColor=white)](windows/)
+[![Release](https://img.shields.io/github/v/release/m0rvey/ultradictate?style=flat-square&color=2ea44f&label=Release)](https://github.com/m0rvey/ultradictate/releases/latest)
+[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20(M1--M5%2C%20A18%20Pro)-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/m0rvey/ultradictate/releases/latest)
+[![Windows](https://img.shields.io/badge/Windows-10%2F11%20(x64)-0078D6?style=flat-square&logo=windows&logoColor=white)](https://github.com/m0rvey/ultradictate/releases/latest)
 [![Swift](https://img.shields.io/badge/Swift-6.0-F05138?style=flat-square&logo=swift&logoColor=white)](https://swift.org/)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![DirectML](https://img.shields.io/badge/DirectML-Hardware%20Accelerated-0078D4?style=flat-square)](windows/)
+[![DirectML](https://img.shields.io/badge/DirectML-Hardware%20Accelerated-0078D4?style=flat-square)](../windows/)
 [![CoreML](https://img.shields.io/badge/CoreML-Neural%20Engine-FF6F00?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/coreml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](../LICENSE)
 
-[Возможности](#-ключевые-возможности) • [Установка для macOS](#-быстрая-установка-macos) • [Установка для Windows](#-установка-windows) • [Горячие клавиши](#-горячие-клавиши) • [Архитектура](#-архитектура-проекта) • [English Version](docs/README_EN.md)
+[Возможности](#-ключевые-возможности) • [Модели речи](#-выбор-модели-whisper-small-vs-base) • [Конфиденциальность](#-конфиденциальность-и-безопасность-100-offline) • [Как скачать и установить](#-как-скачать-и-установить) • [Горячие клавиши](#-горячие-клавиши) • [Архитектура](#-архитектура-проекта) • [English Version](README_EN.md)
 
 </div>
 
@@ -20,101 +21,79 @@
 
 ## 📌 Обзор
 
-**UltraDictate** — кроссплатформенная система диктовки нового поколения, разработанная для мгновенного набора текста голосом в любых приложениях без задержек и без отправки аудиоданных в облако.
+**UltraDictate** — автономная система голосового ввода текста (Speech-to-Text) нового поколения, созданная для мгновенного набора текста голосом в любых приложениях: браузерах, Telegram, Discord, Word, Notion, Obsidian, средах разработки (VS Code, JetBrains) и системных окнах.
 
-- **macOS:** Нативное Swift/SwiftUI приложение, использующее Apple Neural Engine (ANE) и CoreML для ультранизкой задержки (< 250 мс).
-- **Windows:** Нативное .NET 8 приложение с аппаратным ускорением DirectML и ONNX Runtime, работающее на GPU NVIDIA RTX, AMD Radeon, Intel Arc/NPU и многопоточном CPU.
-
----
-
-## ✨ Ключевые возможности
-
-- 🔒 **100% On-Device и Приватно:** Распознавание выполняется локально на вашем компьютере. Нулевая несанкционированная телеметрия.
-- ⚡ **Мгновенный Push-to-Talk:** Зажмите горячую клавишу, продиктуйте мысль — и готовый текст мгновенно появится в активном окне (браузер, мессенджер, IDE, Word).
-- 🧠 **Локальный AI Cleanup:** Опциональная постобработка через локальные модели **Ollama** (`http://localhost:11434/v1`) или облачные провайдеры (Groq, OpenAI) для исправления пунктуации и опечаток.
-- 🗣️ **Голосовые команды и пунктуация:** Поддержка команд «новая строка» (`\n`), «новый абзац» (`\n\n`), автоматическая расстановка знаков препинания.
-- 🎨 **Премиальный Dark Mode & HUD:** Плавающая капсула записи со стекломорфизмом и динамической визуализацией аудиоволны.
-- 📚 **Словарь и автозамены:** Пользовательские правила для замены профессиональных терминов, акронимов и сниппетов.
+- **macOS:** Нативное Swift 6 / SwiftUI приложение, использующее нейропроцессоры **Apple Neural Engine (ANE)** и CoreML для ультранизкой задержки (< 250 мс) на процессорах серии M1–M5 и A18 Pro.
+- **Windows:** Нативное приложение на C# / .NET 8 (Self-Contained Standalone Single-File), использующее движок **Whisper.net** с аппаратным ускорением DirectML и AVX2/AVX512 для мгновенного набора текста на любом ПК.
 
 ---
 
-## 🚀 Быстрая установка (macOS)
+## 🔒 Конфиденциальность и безопасность (100% Offline)
 
-### Требования
-- Mac с процессором **Apple Silicon** (M1-M5, A18 Pro).
-- **macOS 14 (Sonoma)** или новее.
+В эпоху облачных сервисов UltraDictate гарантирует абсолютную приватность вашей речи и вводимых данных:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/m0rvey/ultradictate/v1.0.0/install.sh | /usr/bin/arch -arm64 /bin/bash
-```
-
-1. Запустите UltraDictate и предоставьте системные разрешения: **Микрофон**, **Универсальный доступ** и **Мониторинг ввода**.
-2. Зажмите **Правый Command** и говорите. Отпустите — текст сразу вставится.
+1. **Никакой передачи аудио в сеть:** Захват голоса с микрофона (WASAPI на Windows, CoreAudio на macOS) происходит исключительно в оперативной памяти (In-Memory PCM Stream). Ни аудиозаписи, ни их спектрограммы никогда не отправляются на удаленные серверы.
+2. **Локальные модели нейросетей:** Все веса моделей Whisper хранятся локально на вашем компьютере:
+   - **Windows:** `%APPDATA%\UltraDictate\models\`
+   - **macOS:** `~/Library/Application Support/UltraDictate/`
+3. **Нулевая телеметрия (Zero Telemetry):** В приложении нет аналитики, трекеров, сбора персональных данных или логов нажатия клавиш.
+4. **Безопасная постобработка (Local LLM):** Опциональный модуль исправления грамматики и пунктуации работает с локально запущенным **Ollama** (`http://localhost:11434/v1`) или **LM Studio** (`http://localhost:1234/v1`). Вам не требуется передавать текст внешним API или оплачивать подписки.
 
 ---
 
-## 🪟 Установка (Windows)
+## 🧠 Выбор модели Whisper: Small vs Base
 
-### Требования
-- 64-битная **Windows 10 / 11**.
-- Установленный [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
+При первом запуске UltraDictate мастер настройки предлагает выбрать подходящий профиль модели. Вы также можете переключить профиль в любой момент в окне настроек:
 
-### Запуск
-1. Скачайте `UltraDictate-Windows-x64.zip` из [Releases](https://github.com/m0rvey/ultradictate/releases).
-2. Распакуйте архив и запустите `UltraDictate.exe`.
-3. Зажмите **Правый Control** и диктуйте текст.
+| Параметр | 🌟 Whisper Small (Рекомендуется) | ⚡ Whisper Base (Быстрая) |
+| :--- | :--- | :--- |
+| **Размер на диске** | ~465 МБ (`ggml-small.bin`) | ~140 МБ (`ggml-base.bin`) |
+| **Параметры нейросети** | 244 миллиона | 74 миллиона |
+| **Качество русского языка** | **Максимальное** (качество Apple Silicon Mac) | Базовое (для коротких заметок) |
+| **Словарный запас** | Профессиональные термины, сленг, пунктуация | Повседневные слова |
+| **Скорость декодирования** | ~0.8 – 1.4 сек на предложение | < 0.4 сек на предложение |
+| **Потребление RAM** | ~1.0 ГБ | ~400 МБ |
+| **Для кого подходит** | Основной инструмент для работы, кода и текстов | Ноутбуки, слабые ПК, быстрый отклик |
 
-Для сборки из исходников запустите в папке проекта:
-```cmd
-windows\build.bat
-```
+---
+
+## 📦 Как скачать и установить
+
+### 🪟 Для Windows 10 / 11 (64-бит)
+
+Установка предельно проста — приложение поставляется как **единый автономный файл** (все зависимости и библиотеки .NET 8 уже вшиты внутрь):
+
+1. Скачайте архив **`UltraDictate-Windows-x64.zip`** из [GitHub Releases](https://github.com/m0rvey/ultradictate/releases/latest).
+2. Распакуйте архив в удобное место.
+3. Запустите **`UltraDictate.exe`**.
+4. При первом запуске откроется приветственное окно: выберите профиль **Whisper Small** (рекомендуется) или **Whisper Base** и нажмите **«Начать использование»**.
+5. Зажмите **Правый Ctrl** и диктуйте текст.
+
+### 🍏 Для macOS (Apple Silicon M1–M5, A18 Pro)
+
+1. **Быстрая установка через терминал:**
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/m0rvey/ultradictate/main/install.sh | /usr/bin/arch -arm64 /bin/bash
+   ```
+2. **Либо скачивание готового приложения:**
+   - Скачайте **`UltraDictate-macOS-arm64.zip`** из [Releases](https://github.com/m0rvey/ultradictate/releases/latest).
+   - Распакуйте и переместите `UltraDictate.app` в папку `/Applications`.
+3. Запустите приложение и выдайте разрешения в macOS (Микрофон, Универсальный доступ, Мониторинг ввода).
+4. Удерживайте **Правый ⌘ (Right Command)** и диктуйте.
 
 ---
 
 ## ⌨️ Горячие клавиши
 
-| Платформа | Клавиша по умолчанию | Поведение |
+| Платформа | Горячая клавиша по умолчанию | Назначение |
 | :--- | :--- | :--- |
-| **macOS** | `Правый ⌘ (Right Command)` | Удерживайте для записи, отпустите для вставки |
 | **Windows** | `Правый Ctrl (Right Control)` | Удерживайте для записи, отпустите для вставки |
-| **Все ОС** | `Escape` | Мгновенная отмена диктовки без вставки |
-
----
-
-## 🏗️ Архитектура проекта
-
-```
-ultradictate/
-├── swift/                     # Нативный движок для macOS (Apple Silicon)
-│   ├── Package.swift          # Модульная сборка SwiftPM
-│   ├── FluidAudio/            # Локальная библиотека CoreML/ANE инференса
-│   └── Sources/UltraDictate/
-│       ├── Audio/             # Захват и конвертация звука (AVAudioEngine)
-│       ├── Core/              # Глобальные хоткеи (CGEventTap), настройки, сервис
-│       ├── Speech/            # Модели Parakeet/Whisper, верификация кэша (<0.2 мс)
-│       ├── Text/              # Очистка текста, автозамены, Ollama/AI клиент
-│       └── UI/                # Менюбар, плавающий HUD 120 Гц, статистика
-│
-├── windows/                   # Нативный движок для Windows
-│   ├── UltraDictate.Windows/  # Проект .NET 8 / C#
-│   │   ├── Core/              # WASAPI аудио, DirectML ONNX, SendInput вставка
-│   │   └── UI/                # Трей-меню Windows и стеклянный HUD
-│   ├── build.bat              # Скрипт сборки автономного .exe
-│   └── install.ps1            # Скрипт установки и создания ярлыков
-│
-├── scripts/                   # Утилиты сборки, проверки и тестирования
-│   ├── build-app.sh           # Сборка и подпись UltraDictate.app
-│   └── check.sh               # Комплексная проверка целостности и версий
-│
-└── .github/workflows/         # CI/CD релизный пайплайн
-    ├── build.yml              # Проверка сборки на macOS и Windows
-    └── release.yml            # Автоматическая сборка мультиплатформенных релизов
-```
+| **macOS** | `Правый ⌘ (Right Command)` | Удерживайте для записи, отпустите для вставки |
+| **Все ОС** | `Escape` | Отмена диктовки без вставки текста |
 
 ---
 
 ## 📜 Лицензия и Авторство
 
 - Автор: **m0rvey** ([GitHub](https://github.com/m0rvey))
-- Основано на наработках SuperDictate и Parakey (MIT License).
-- Распространяется под лицензией [MIT](LICENSE).
+- Распространяется под лицензией [MIT](../LICENSE).
