@@ -383,23 +383,21 @@ final class Permissions {
                 if status == .denied {
                     openSettings(for: p)
                 } else if status == .undetermined {
-                    AVAudioApplication.requestRecordPermission { granted in
-                        Task { @MainActor in
-                            log("Microphone request (AVAudioApplication): granted=\(granted)")
-                            NotificationCenter.default.post(name: .microphonePermissionChanged, object: nil)
-                        }
+                    Task { @MainActor in
+                        let granted = await AVAudioApplication.requestRecordPermission()
+                        log("Microphone request (AVAudioApplication): granted=\(granted)")
+                        NotificationCenter.default.post(name: .microphonePermissionChanged, object: nil)
                     }
                 }
             } else {
                 let status = AVCaptureDevice.authorizationStatus(for: .audio)
-                if status == .denied {
+                if status == .denied || status == .restricted {
                     openSettings(for: p)
-                } else {
-                    AVCaptureDevice.requestAccess(for: .audio) { granted in
-                        Task { @MainActor in
-                            log("Microphone request: granted=\(granted)")
-                            NotificationCenter.default.post(name: .microphonePermissionChanged, object: nil)
-                        }
+                } else if status == .notDetermined {
+                    Task { @MainActor in
+                        let granted = await AVCaptureDevice.requestAccess(for: .audio)
+                        log("Microphone request: granted=\(granted)")
+                        NotificationCenter.default.post(name: .microphonePermissionChanged, object: nil)
                     }
                 }
             }
@@ -436,11 +434,12 @@ final class Permissions {
             .inputMonitoring: "ListenEvent",
         ]
         var failures: [String] = []
+        let bundleId = Bundle.main.bundleIdentifier ?? SETTINGS_SUITE
         for permission in Permission.allCases {
             guard let service = services[permission] else { continue }
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
-            process.arguments = ["reset", service, SETTINGS_SUITE]
+            process.arguments = ["reset", service, bundleId]
             do {
                 try process.run()
                 process.waitUntilExit()
