@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -20,6 +21,8 @@ public class OnnxSpeechEngine : IDisposable
     public bool IsLoaded => _isLoaded;
     public bool IsDownloading => _isDownloading;
     public string StatusMessage => _statusMessage;
+    public string CurrentModelPath { get; private set; } = string.Empty;
+    public string CurrentModelName => string.IsNullOrEmpty(CurrentModelPath) ? "None" : Path.GetFileName(CurrentModelPath);
 
     public event Action<string>? StatusChanged;
     public event Action<int>? DownloadProgressChanged;
@@ -31,6 +34,7 @@ public class OnnxSpeechEngine : IDisposable
     );
 
     public static readonly string DefaultModelFile = Path.Combine(DefaultModelsDir, "ggml-base.bin");
+    public static readonly string SmallModelFile = Path.Combine(DefaultModelsDir, "ggml-small.bin");
 
     public OnnxSpeechEngine()
     {
@@ -43,7 +47,7 @@ public class OnnxSpeechEngine : IDisposable
         {
             Directory.CreateDirectory(DefaultModelsDir);
 
-            // 1. Check if model exists in models directory or app directory
+            // 1. Check if model exists (Small prioritized if present, then Base)
             string? foundModel = FindExistingModel();
             if (foundModel != null && File.Exists(foundModel))
             {
@@ -60,19 +64,39 @@ public class OnnxSpeechEngine : IDisposable
         }
     }
 
-    private string? FindExistingModel()
+    public string? FindExistingModel(string? preferredType = null)
     {
-        var candidatePaths = new[]
+        // 1. If Small is preferred or if no preference, check small first (superior quality)
+        if (preferredType == "Small" || string.IsNullOrEmpty(preferredType))
+        {
+            var smallCandidates = new[]
+            {
+                SmallModelFile,
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "models", "ggml-small.bin"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ggml-small.bin")
+            };
+
+            foreach (var path in smallCandidates)
+            {
+                if (File.Exists(path) && new FileInfo(path).Length > 100_000_000)
+                {
+                    return path;
+                }
+            }
+        }
+
+        // 2. Base candidates
+        var baseCandidates = new[]
         {
             DefaultModelFile,
-            Path.Combine(DefaultModelsDir, "ggml-tiny.bin"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "models", "ggml-base.bin"),
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "models", "ggml-tiny.bin"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ggml-base.bin"),
+            Path.Combine(DefaultModelsDir, "ggml-tiny.bin"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "models", "ggml-tiny.bin"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ggml-tiny.bin")
         };
 
-        foreach (var path in candidatePaths)
+        foreach (var path in baseCandidates)
         {
             if (File.Exists(path) && new FileInfo(path).Length > 10_000_000)
             {
@@ -92,6 +116,15 @@ public class OnnxSpeechEngine : IDisposable
         return null;
     }
 
+    public void SwitchModel(string modelType)
+    {
+        string? model = FindExistingModel(modelType);
+        if (model != null && model != CurrentModelPath)
+        {
+            LoadModel(model);
+        }
+    }
+
     public async Task DownloadModelAsync(string destinationPath)
     {
         if (_isDownloading) return;
@@ -101,18 +134,19 @@ public class OnnxSpeechEngine : IDisposable
             _isDownloading = true;
         }
 
-        UpdateStatus("Downloading Whisper AI model (~140MB)...");
+        string filename = Path.GetFileName(destinationPath);
+        UpdateStatus($"Downloading {filename}...");
 
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
 
-            string url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin";
-            using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+            string url = $"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{filename}";
+            using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
             using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
 
-            long totalBytes = response.Content.Headers.ContentLength ?? 147_951_456;
+            long totalBytes = response.Content.Headers.ContentLength ?? (filename.Contains("small") ? 487_000_000 : 147_951_456);
             using var contentStream = await response.Content.ReadAsStreamAsync();
 
             string tempFile = destinationPath + ".tmp";
@@ -145,7 +179,7 @@ public class OnnxSpeechEngine : IDisposable
         }
         catch (Exception ex)
         {
-            UpdateStatus($"Download failed: {ex.Message}. Check internet or place ggml-base.bin in models/.");
+            UpdateStatus($"Download failed: {ex.Message}. Check connection or place model in models/.");
         }
         finally
         {
@@ -165,7 +199,8 @@ public class OnnxSpeechEngine : IDisposable
                 _whisperFactory?.Dispose();
                 _whisperFactory = WhisperFactory.FromPath(modelPath);
                 _isLoaded = true;
-                UpdateStatus("Whisper Model Ready");
+                CurrentModelPath = modelPath;
+                UpdateStatus($"Model Ready ({Path.GetFileName(modelPath)})");
             }
             catch (Exception ex)
             {
@@ -192,7 +227,7 @@ public class OnnxSpeechEngine : IDisposable
 
             if (!_isLoaded)
             {
-                return "[UltraDictate: Загрузка модели Whisper... Пожалуйста, подождите завершения]";
+                return "[UltraDictate: Загрузка модели Whisper... Пожалуйста, подождите]";
             }
         }
 
@@ -244,6 +279,7 @@ public class OnnxSpeechEngine : IDisposable
                 var factory = _whisperFactory;
                 if (factory == null) return string.Empty;
                 var builder = factory.CreateBuilder();
+
                 if (lang != "auto")
                 {
                     builder.WithLanguage(lang);
@@ -253,18 +289,48 @@ public class OnnxSpeechEngine : IDisposable
                     builder.WithLanguageDetection();
                 }
 
+                // Optimal multi-threading
+                builder.WithThreads(Math.Max(1, Environment.ProcessorCount - 1));
+
+                // Context prompt conditioning to boost Russian vocabulary and eliminate case misrecognitions
+                if (lang == "ru" || lang == "auto")
+                {
+                    builder.WithPrompt("Здравствуйте. Это грамотная русская речь, чёткая диктовка с соблюдением правил грамматики и пунктуации.");
+                }
+                else if (lang == "en")
+                {
+                    builder.WithPrompt("Hello. This is clear speech dictation in English with proper grammar and punctuation.");
+                }
+
+                // Deterministic greedy decoding & no-speech filtering to eliminate looping hallucinations
+                builder.WithTemperature(0.0f);
+                builder.WithNoSpeechThreshold(0.6f);
+
                 using var processor = builder.Build();
-                var textBuilder = new StringBuilder();
+                var seenSegments = new List<string>();
 
                 await foreach (var segment in processor.ProcessAsync(wavStream))
                 {
-                    if (!string.IsNullOrWhiteSpace(segment.Text))
+                    string text = segment.Text?.Trim() ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(text)) continue;
+
+                    // Clean up repetitions and loop hallucinations
+                    if (seenSegments.Count > 0)
                     {
-                        textBuilder.Append(segment.Text.Trim()).Append(' ');
+                        string prev = seenSegments[^1];
+                        if (string.Equals(prev, text, StringComparison.OrdinalIgnoreCase)) continue;
+                        if (prev.Contains(text, StringComparison.OrdinalIgnoreCase) && text.Length > 8) continue;
+                        if (text.Contains(prev, StringComparison.OrdinalIgnoreCase) && prev.Length > 8)
+                        {
+                            seenSegments[^1] = text;
+                            continue;
+                        }
                     }
+
+                    seenSegments.Add(text);
                 }
 
-                return textBuilder.ToString().Trim();
+                return string.Join(" ", seenSegments).Trim();
             }
             catch (Exception ex)
             {

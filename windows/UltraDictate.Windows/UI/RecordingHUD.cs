@@ -42,7 +42,7 @@ public class RecordingHUD : Form
         ShowInTaskbar = false;
         TopMost = true;
         StartPosition = FormStartPosition.Manual;
-        Size = new Size(224, 48);
+        Size = new Size(236, 52);
         BackColor = Color.FromArgb(13, 17, 23);
         DoubleBuffered = true;
 
@@ -135,44 +135,46 @@ public class RecordingHUD : Form
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
+        // Clear canvas with base dark background to prevent any fringe artifacts
+        g.Clear(Color.FromArgb(13, 17, 23));
+
         var bounds = new Rectangle(0, 0, Width, Height);
-        var innerRect = new Rectangle(1, 1, Width - 2, Height - 2);
+        var innerBorderRect = new Rectangle(1, 1, Width - 2, Height - 2);
 
         // 1. Dark Acrylic Glassmorphic Background Gradient
         using (var bgPath = GetCapsulePath(bounds))
         using (var bgBrush = new LinearGradientBrush(
             bounds,
-            Color.FromArgb(28, 33, 44),
+            Color.FromArgb(26, 31, 42),
             Color.FromArgb(13, 17, 23),
             LinearGradientMode.Vertical))
         {
             g.FillPath(bgBrush, bgPath);
         }
 
-        // 2. Subtle glass highlight sheen along top hemisphere
-        using (var sheenPath = GetTopSheenPath(bounds))
+        // 2. Soft inner glass sheen (strictly inset, never touching outer boundary)
         using (var sheenBrush = new LinearGradientBrush(
-            new Rectangle(0, 0, Width, Height / 2),
-            Color.FromArgb(38, 255, 255, 255),
+            new Rectangle(26, 2, Width - 52, 20),
+            Color.FromArgb(16, 255, 255, 255),
             Color.FromArgb(0, 255, 255, 255),
             LinearGradientMode.Vertical))
         {
-            g.FillPath(sheenBrush, sheenPath);
+            g.FillRectangle(sheenBrush, 26, 2, Width - 52, 20);
         }
 
-        // 3. Ultra-fine metallic border outline
-        using (var borderPath = GetCapsulePath(innerRect))
-        using (var borderPen = new Pen(Color.FromArgb(65, 255, 255, 255), 1.2f))
+        // 3. Deep Slate Titanium Border (eliminates any white subpixel halo)
+        using (var borderPath = GetCapsulePath(innerBorderRect))
+        using (var borderPen = new Pen(Color.FromArgb(42, 54, 72), 1.0f))
         {
             g.DrawPath(borderPen, borderPath);
         }
 
         // 4. Pulsing recording beacon (Left)
         float pulse = (MathF.Sin(_animTime * 4f) + 1f) * 0.5f;
-        int haloSize = (int)(16 + pulse * 7);
+        int haloSize = (int)(16 + pulse * 8);
         int haloAlpha = (int)(25 + pulse * 55);
 
-        int dotCenterX = 24;
+        int dotCenterX = 26;
         int dotCenterY = Height / 2;
 
         // Outer neon glow halo
@@ -191,17 +193,17 @@ public class RecordingHUD : Form
         using (var titleBrush = new SolidBrush(Color.FromArgb(245, 247, 250)))
         using (var titleFont = new Font("Segoe UI", 9.5f, FontStyle.Bold))
         {
-            g.DrawString("UltraDictate", titleFont, titleBrush, 44, 9);
+            g.DrawString("UltraDictate", titleFont, titleBrush, 46, 10);
         }
 
         using (var subBrush = new SolidBrush(Color.FromArgb(139, 148, 158)))
-        using (var subFont = new Font("Segoe UI", 7.5f, FontStyle.Regular))
+        using (var subFont = new Font("Segoe UI", 7.8f, FontStyle.Regular))
         {
-            g.DrawString(_statusText, subFont, subBrush, 44, 27);
+            g.DrawString(_statusText, subFont, subBrush, 46, 29);
         }
 
         // 6. Dynamic Equalizer Waveform Bars (6 rounded pill bars with fluid wave physics)
-        int startX = 144;
+        int startX = 152;
         int centerY = Height / 2;
         int barWidth = 4;
         int barSpacing = 8;
@@ -227,7 +229,7 @@ public class RecordingHUD : Form
                 energy += (MathF.Sin(_animTime * 3.2f + (i * 0.8f)) * 0.5f + 0.5f) * 0.05f;
             }
 
-            int barHeight = Math.Clamp((int)(energy * 26f), 4, 28);
+            int barHeight = Math.Clamp((int)(energy * 28f), 4, 30);
             int x = startX + (i * barSpacing);
             int y = centerY - (barHeight / 2);
 
@@ -253,22 +255,13 @@ public class RecordingHUD : Form
         int diameter = rect.Height;
         var path = new GraphicsPath();
         path.AddArc(rect.X, rect.Y, diameter, diameter, 90, 180);
+        path.AddLine(rect.X + diameter / 2, rect.Y, rect.Right - diameter / 2, rect.Y);
         path.AddArc(rect.Right - diameter, rect.Y, diameter, diameter, 270, 180);
+        path.AddLine(rect.Right - diameter / 2, rect.Bottom, rect.X + diameter / 2, rect.Bottom);
         path.CloseFigure();
         return path;
     }
 
-    private static GraphicsPath GetTopSheenPath(Rectangle rect)
-    {
-        int diameter = rect.Height;
-        var path = new GraphicsPath();
-        path.AddArc(rect.X, rect.Y, diameter, diameter, 180, 90);
-        path.AddLine(rect.X + diameter / 2, rect.Y, rect.Right - diameter / 2, rect.Y);
-        path.AddArc(rect.Right - diameter, rect.Y, diameter, diameter, 270, 90);
-        path.AddLine(rect.Right, rect.Y + diameter / 2, rect.X, rect.Y + diameter / 2);
-        path.CloseFigure();
-        return path;
-    }
 
     private static GraphicsPath GetRoundedRectPath(Rectangle bounds, int radius)
     {

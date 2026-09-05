@@ -20,6 +20,7 @@ public class SettingsForm : Form
     private ComboBox _insertionModeCombo = null!;
     private CheckBox _trailingPeriodCheck = null!;
 
+    private ComboBox _whisperModelCombo = null!;
     private CheckBox _aiCleanupCheck = null!;
     private TextBox _aiBaseUrlText = null!;
     private TextBox _aiModelText = null!;
@@ -306,45 +307,79 @@ public class SettingsForm : Form
             e.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
         };
 
-        int innerTop = 24;
+        int innerTop = 20;
 
         var modelTitle = new Label
         {
-            Text = "Offline Whisper Engine",
+            Text = "Local Whisper AI Speech Engine",
             Location = new Point(24, innerTop),
             AutoSize = true,
-            Font = new Font("Segoe UI", 11f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 11.5f, FontStyle.Bold),
             ForeColor = Color.White
         };
         card.Controls.Add(modelTitle);
 
-        innerTop += 34;
-        string modelFile = OnnxSpeechEngine.DefaultModelFile;
-        bool exists = File.Exists(modelFile);
-
-        var statusDesc = new Label
+        innerTop += 32;
+        card.Controls.Add(CreateLabel("Model Profile:", 24, innerTop));
+        _whisperModelCombo = new ComboBox
         {
-            Text = exists
-                ? $"✓ Model status: Ready on disk (ggml-base.bin, {new FileInfo(modelFile).Length / (1024 * 1024)} MB)"
-                : "⏳ Model status: Will auto-download on first launch (~140 MB)",
+            Location = new Point(24, innerTop + 24),
+            Width = 380,
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            BackColor = Color.FromArgb(13, 17, 23),
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat
+        };
+        _whisperModelCombo.Items.AddRange(new object[]
+        {
+            "Whisper Small (~465 MB) — High Accuracy (Mac-grade quality)",
+            "Whisper Base (~140 MB) — Fast & Lightweight"
+        });
+        _whisperModelCombo.SelectedIndex = _settings.WhisperModelType == "Base" ? 1 : 0;
+        card.Controls.Add(_whisperModelCombo);
+
+        innerTop += 66;
+        string smallFile = OnnxSpeechEngine.SmallModelFile;
+        string baseFile = OnnxSpeechEngine.DefaultModelFile;
+        bool smallExists = File.Exists(smallFile) && new FileInfo(smallFile).Length > 100_000_000;
+        bool baseExists = File.Exists(baseFile) && new FileInfo(baseFile).Length > 10_000_000;
+
+        var statusSmall = new Label
+        {
+            Text = smallExists
+                ? $"✓ Whisper Small: Installed on disk ({new FileInfo(smallFile).Length / (1024 * 1024)} MB)"
+                : "⏳ Whisper Small: In progress / ready to download (~465 MB)",
             Location = new Point(24, innerTop),
             AutoSize = true,
-            ForeColor = exists ? Color.FromArgb(63, 185, 80) : Color.FromArgb(240, 136, 62)
+            ForeColor = smallExists ? Color.FromArgb(63, 185, 80) : Color.FromArgb(240, 136, 62)
         };
-        card.Controls.Add(statusDesc);
+        card.Controls.Add(statusSmall);
 
-        innerTop += 45;
+        innerTop += 24;
+        var statusBase = new Label
+        {
+            Text = baseExists
+                ? $"✓ Whisper Base: Installed on disk ({new FileInfo(baseFile).Length / (1024 * 1024)} MB)"
+                : "⏳ Whisper Base: Ready to auto-download (~140 MB)",
+            Location = new Point(24, innerTop),
+            AutoSize = true,
+            ForeColor = baseExists ? Color.FromArgb(63, 185, 80) : Color.FromArgb(139, 148, 158)
+        };
+        card.Controls.Add(statusBase);
+
+        innerTop += 38;
         var descLabel = new Label
         {
-            Text = "Whisper runs 100% locally on your machine with high accuracy for Russian and English.\n" +
-                   "Audio is processed in-memory and never sent to any server.",
+            Text = "• Whisper Small: Delivers pristine Russian and English dictation matching macOS Apple Silicon accuracy.\n" +
+                   "• Whisper Base: Ultra-fast decoding on lower-end systems with standard vocabulary.\n" +
+                   "All inference executes 100% locally and privately on your machine.",
             Location = new Point(24, innerTop),
-            Size = new Size(520, 40),
+            Size = new Size(530, 60),
             ForeColor = Color.FromArgb(139, 148, 158)
         };
         card.Controls.Add(descLabel);
 
-        innerTop += 65;
+        innerTop += 75;
         var openFolderButton = new Button
         {
             Text = "📁 Open Models Folder",
@@ -519,6 +554,7 @@ public class SettingsForm : Form
             _ => "auto"
         };
         _settings.InsertionMode = _insertionModeCombo.SelectedIndex == 1 ? "DirectTyping" : "ClipboardPaste";
+        _settings.WhisperModelType = _whisperModelCombo.SelectedIndex == 1 ? "Base" : "Small";
         _settings.RemoveTrailingPeriod = _trailingPeriodCheck.Checked;
 
         _settings.EnableAICleanup = _aiCleanupCheck.Checked;

@@ -63,8 +63,38 @@ public class AudioCaptureService : IDisposable
             if (raw.Length == 0) return Array.Empty<float>();
 
             // Resample from device native sample rate to TargetSampleRate (16 kHz)
-            return Resample(raw, _sourceSampleRate, TargetSampleRate);
+            var resampled = Resample(raw, _sourceSampleRate, TargetSampleRate);
+            return TrimSilence(resampled);
         }
+    }
+
+    public static float[] TrimSilence(float[] audio, float threshold = 0.008f)
+    {
+        if (audio == null || audio.Length == 0) return Array.Empty<float>();
+
+        int start = 0;
+        while (start < audio.Length && MathF.Abs(audio[start]) < threshold)
+        {
+            start++;
+        }
+
+        int end = audio.Length - 1;
+        while (end > start && MathF.Abs(audio[end]) < threshold)
+        {
+            end--;
+        }
+
+        // Keep 150ms natural speech buffer at start and end
+        int pad = (int)(TargetSampleRate * 0.15f);
+        start = Math.Max(0, start - pad);
+        end = Math.Min(audio.Length - 1, end + pad);
+
+        int len = end - start + 1;
+        if (len <= 0) return Array.Empty<float>();
+
+        var trimmed = new float[len];
+        Array.Copy(audio, start, trimmed, 0, len);
+        return trimmed;
     }
 
     private void OnDataAvailable(object? sender, WaveInEventArgs e)

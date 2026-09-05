@@ -186,7 +186,8 @@ public class TrayApplicationContext : ApplicationContext
         {
             SettingsManager.SaveSettings(updated);
             ApplyHotkeySettings();
-            UpdateTrayTooltip($"UltraDictate — {updated.Hotkey}");
+            _speechEngine.SwitchModel(updated.WhisperModelType);
+            UpdateTrayTooltip($"UltraDictate — {updated.Hotkey} ({_speechEngine.CurrentModelName})");
         });
         form.ShowDialog();
     }
