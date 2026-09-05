@@ -1,16 +1,40 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace UltraDictate.Windows.UI;
 
 public class RecordingHUD : Form
 {
-    private float _audioLevel = 0f;
+    private float _targetLevel = 0f;
     private float _smoothedLevel = 0f;
-    private float _pulsePhase = 0f;
+    private float _animTime = 0f;
+    private string _statusText = "Listening...";
+    private readonly Stopwatch _stopwatch = new();
     private readonly System.Windows.Forms.Timer _animationTimer;
+
+    private const int WS_EX_TOPMOST = 0x00000008;
+    private const int WS_EX_TOOLWINDOW = 0x00000080;
+    private const int WS_EX_NOACTIVATE = 0x08000000;
+    private const int SW_SHOWNOACTIVATE = 4;
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    protected override bool ShowWithoutActivation => true;
+
+    protected override CreateParams CreateParams
+    {
+        get
+        {
+            var cp = base.CreateParams;
+            cp.ExStyle |= WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE;
+            return cp;
+        }
+    }
 
     public RecordingHUD()
     {
@@ -18,7 +42,7 @@ public class RecordingHUD : Form
         ShowInTaskbar = false;
         TopMost = true;
         StartPosition = FormStartPosition.Manual;
-        Size = new Size(216, 46);
+        Size = new Size(224, 48);
         BackColor = Color.FromArgb(13, 17, 23);
         DoubleBuffered = true;
 
@@ -28,17 +52,24 @@ public class RecordingHUD : Form
                  ControlStyles.SupportsTransparentBackColor, true);
 
         _animationTimer = new System.Windows.Forms.Timer { Interval = 16 }; // ~60 FPS
-        _animationTimer.Tick += (s, e) =>
-        {
-            _pulsePhase += 0.08f;
-            if (_pulsePhase > MathF.PI * 2) _pulsePhase -= MathF.PI * 2;
-
-            // Smooth audio level damping
-            _smoothedLevel = (_smoothedLevel * 0.72f) + (_audioLevel * 0.28f);
-            Invalidate();
-        };
+        _animationTimer.Tick += OnAnimationTick;
 
         UpdateRegion();
+    }
+
+    private void OnAnimationTick(object? sender, EventArgs e)
+    {
+        float dt = (float)_stopwatch.Elapsed.TotalSeconds;
+        _stopwatch.Restart();
+
+        if (dt <= 0 || dt > 0.1f) dt = 0.016f;
+        _animTime += dt;
+
+        // Asymmetric attack & decay: snappy attack (26f) when speaking, silky smooth decay (7.5f) when quiet
+        float lerpSpeed = _targetLevel > _smoothedLevel ? 26f : 7.5f;
+        _smoothedLevel += (_targetLevel - _smoothedLevel) * Math.Clamp(dt * lerpSpeed, 0.02f, 0.7f);
+
+        Invalidate();
     }
 
     protected override void OnResize(EventArgs e)
@@ -66,23 +97,35 @@ public class RecordingHUD : Form
         if (y < screen.WorkingArea.Top + 12) y = Cursor.Position.Y + 32;
 
         Location = new Point(x, y);
-        _audioLevel = 0.05f;
-        _smoothedLevel = 0.05f;
-        Show();
+        _targetLevel = 0.06f;
+        _smoothedLevel = 0.06f;
+        _statusText = "Listening...";
+        _stopwatch.Restart();
+
+        // Show window WITHOUT stealing focus from the active app
+        ShowWindow(Handle, SW_SHOWNOACTIVATE);
+        Visible = true;
         _animationTimer.Start();
+    }
+
+    public void SetTranscribing()
+    {
+        _statusText = "Processing...";
+        _targetLevel = 0.4f;
+        Invalidate();
     }
 
     public void HideHUD()
     {
         _animationTimer.Stop();
-        _audioLevel = 0f;
+        _targetLevel = 0f;
         _smoothedLevel = 0f;
         Hide();
     }
 
     public void UpdateAudioLevel(float level)
     {
-        _audioLevel = Math.Clamp(level, 0f, 1f);
+        _targetLevel = Math.Clamp(level, 0f, 1f);
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -110,7 +153,7 @@ public class RecordingHUD : Form
         using (var sheenPath = GetTopSheenPath(bounds))
         using (var sheenBrush = new LinearGradientBrush(
             new Rectangle(0, 0, Width, Height / 2),
-            Color.FromArgb(35, 255, 255, 255),
+            Color.FromArgb(38, 255, 255, 255),
             Color.FromArgb(0, 255, 255, 255),
             LinearGradientMode.Vertical))
         {
@@ -119,15 +162,15 @@ public class RecordingHUD : Form
 
         // 3. Ultra-fine metallic border outline
         using (var borderPath = GetCapsulePath(innerRect))
-        using (var borderPen = new Pen(Color.FromArgb(70, 255, 255, 255), 1.2f))
+        using (var borderPen = new Pen(Color.FromArgb(65, 255, 255, 255), 1.2f))
         {
             g.DrawPath(borderPen, borderPath);
         }
 
         // 4. Pulsing recording beacon (Left)
-        float pulse = (MathF.Sin(_pulsePhase) + 1f) * 0.5f;
-        int haloSize = (int)(16 + pulse * 6);
-        int haloAlpha = (int)(30 + pulse * 50);
+        float pulse = (MathF.Sin(_animTime * 4f) + 1f) * 0.5f;
+        int haloSize = (int)(16 + pulse * 7);
+        int haloAlpha = (int)(25 + pulse * 55);
 
         int dotCenterX = 24;
         int dotCenterY = Height / 2;
@@ -144,37 +187,61 @@ public class RecordingHUD : Form
             g.FillEllipse(dotBrush, dotCenterX - 5, dotCenterY - 5, 10, 10);
         }
 
-        // 5. Typography: "UltraDictate"
-        using (var textBrush = new SolidBrush(Color.FromArgb(245, 247, 250)))
-        using (var font = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+        // 5. Typography: "UltraDictate" & Subtitle
+        using (var titleBrush = new SolidBrush(Color.FromArgb(245, 247, 250)))
+        using (var titleFont = new Font("Segoe UI", 9.5f, FontStyle.Bold))
         {
-            g.DrawString("UltraDictate", font, textBrush, 42, 13);
+            g.DrawString("UltraDictate", titleFont, titleBrush, 44, 9);
         }
 
-        // 6. Dynamic Equalizer Waveform Bars (5 rounded pill bars)
-        int startX = 148;
+        using (var subBrush = new SolidBrush(Color.FromArgb(139, 148, 158)))
+        using (var subFont = new Font("Segoe UI", 7.5f, FontStyle.Regular))
+        {
+            g.DrawString(_statusText, subFont, subBrush, 44, 27);
+        }
+
+        // 6. Dynamic Equalizer Waveform Bars (6 rounded pill bars with fluid wave physics)
+        int startX = 144;
         int centerY = Height / 2;
         int barWidth = 4;
         int barSpacing = 8;
+        int barCount = 6;
+        bool isProcessing = _statusText.Contains("Processing");
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < barCount; i++)
         {
-            // Harmonic wave offset for each bar
-            float wave = MathF.Sin(_pulsePhase * 2.6f + (i * 0.85f)) * 0.35f + 0.65f;
-            float barVal = MathF.Max(0.12f, _smoothedLevel * wave * 1.3f);
-            int barHeight = Math.Clamp((int)(barVal * 26), 4, 26);
+            float energy;
+            if (isProcessing)
+            {
+                // Sleek sine traveling wave when transcribing
+                energy = 0.3f + (MathF.Sin(_animTime * 11f + (i * 0.9f)) * 0.5f + 0.5f) * 0.45f;
+            }
+            else
+            {
+                // Multiphase organic fluid harmonic wave
+                float wave1 = MathF.Sin(_animTime * 6.5f + (i * 0.95f)) * 0.35f + 0.65f;
+                float wave2 = MathF.Cos(_animTime * 4.8f - (i * 0.75f)) * 0.15f;
+                energy = MathF.Max(0.12f, _smoothedLevel * (wave1 + wave2) * 1.6f);
 
+                // Subtle organic breathing motion when idle
+                energy += (MathF.Sin(_animTime * 3.2f + (i * 0.8f)) * 0.5f + 0.5f) * 0.05f;
+            }
+
+            int barHeight = Math.Clamp((int)(energy * 26f), 4, 28);
             int x = startX + (i * barSpacing);
             int y = centerY - (barHeight / 2);
 
             var barRect = new Rectangle(x, y, barWidth, barHeight);
             using var barPath = GetRoundedRectPath(barRect, 2);
 
-            // Vibrant Electric Cyan to Neon Azure gradient
+            // Vibrant Electric Cyan to Neon Azure or Amethyst gradient
+            Color colorTop = isProcessing ? Color.FromArgb(218, 119, 242) : Color.FromArgb(90, 200, 250);
+            Color colorBottom = isProcessing ? Color.FromArgb(130, 80, 223) : Color.FromArgb(0, 122, 255);
+
             using var barBrush = new LinearGradientBrush(
                 barRect,
-                Color.FromArgb(90, 200, 250),
-                Color.FromArgb(0, 122, 255),
+                colorTop,
+                colorBottom,
                 LinearGradientMode.Vertical);
 
             g.FillPath(barBrush, barPath);
@@ -185,9 +252,7 @@ public class RecordingHUD : Form
     {
         int diameter = rect.Height;
         var path = new GraphicsPath();
-        // Left semicircle
         path.AddArc(rect.X, rect.Y, diameter, diameter, 90, 180);
-        // Right semicircle
         path.AddArc(rect.Right - diameter, rect.Y, diameter, diameter, 270, 180);
         path.CloseFigure();
         return path;

@@ -1,5 +1,7 @@
 using System;
 using System.Drawing;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using UltraDictate.Windows.Core;
@@ -8,12 +10,16 @@ namespace UltraDictate.Windows.UI;
 
 public class TrayApplicationContext : ApplicationContext
 {
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
     private readonly NotifyIcon _trayIcon;
     private readonly AppSettings _settings;
     private readonly GlobalHotkeyListener _hotkeyListener;
     private readonly AudioCaptureService _audioCapture;
     private readonly OnnxSpeechEngine _speechEngine;
     private readonly RecordingHUD _recordingHUD;
+    private IntPtr _targetWindow = IntPtr.Zero;
     private bool _isBusy = false;
 
     public TrayApplicationContext(AppSettings settings)
@@ -24,6 +30,8 @@ public class TrayApplicationContext : ApplicationContext
         _audioCapture = new AudioCaptureService();
         _speechEngine = new OnnxSpeechEngine();
         _hotkeyListener = new GlobalHotkeyListener();
+
+        ApplyHotkeySettings();
 
         _audioCapture.AudioLevelChanged += level => _recordingHUD.UpdateAudioLevel(level);
 
@@ -53,19 +61,84 @@ public class TrayApplicationContext : ApplicationContext
         {
             Icon = trayIcon,
             ContextMenuStrip = contextMenu,
-            Text = "UltraDictate — Hold Right Ctrl to dictate",
             Visible = true
         };
 
-        _trayIcon.ShowBalloonTip(3000, "UltraDictate", "Ready! Hold Right Ctrl to dictate.", ToolTipIcon.Info);
+        _speechEngine.StatusChanged += status =>
+        {
+            UpdateTrayTooltip($"UltraDictate — {status}");
+        };
+
+        _speechEngine.DownloadProgressChanged += percent =>
+        {
+            if (percent % 25 == 0)
+            {
+                _trayIcon.ShowBalloonTip(2000, "UltraDictate", $"Downloading AI Speech Model: {percent}%", ToolTipIcon.Info);
+            }
+        };
+
+        UpdateTrayTooltip($"UltraDictate — {_settings.Hotkey}");
+        _trayIcon.ShowBalloonTip(3000, "UltraDictate", $"Ready! {_settings.Hotkey} to dictate.", ToolTipIcon.Info);
+    }
+
+    private void ApplyHotkeySettings()
+    {
+        _hotkeyListener.TargetVkCode = _settings.Hotkey switch
+        {
+            "RightAlt" => 0xA5,
+            "CapsLock" => 0x14,
+            "F8" => 0x77,
+            _ => 0xA3 // Right Control
+        };
+    }
+
+    private void UpdateTrayTooltip(string text)
+    {
+        try
+        {
+            if (text.Length > 63) text = text.Substring(0, 60) + "...";
+            _trayIcon.Text = text;
+        }
+        catch { }
     }
 
     private void OnHotkeyDown()
     {
         if (_isBusy) return;
 
+        if (_settings.TriggerMode == "PressToToggle")
+        {
+            if (_audioCapture.IsRecording)
+            {
+                _ = StopAndTranscribeAsync();
+            }
+            else
+            {
+                StartRecording();
+            }
+        }
+        else
+        {
+            StartRecording();
+        }
+    }
+
+    private void OnHotkeyUp()
+    {
+        if (_settings.TriggerMode == "HoldToDictate")
+        {
+            _ = StopAndTranscribeAsync();
+        }
+    }
+
+    private void StartRecording()
+    {
+        if (_isBusy || _audioCapture.IsRecording) return;
+
         try
         {
+            // Capture currently focused window before HUD displays
+            _targetWindow = GetForegroundWindow();
             _audioCapture.StartRecording();
             _recordingHUD.ShowAtCursor();
         }
@@ -75,12 +148,12 @@ public class TrayApplicationContext : ApplicationContext
         }
     }
 
-    private async void OnHotkeyUp()
+    private async Task StopAndTranscribeAsync()
     {
-        if (!_audioCapture.IsRecording) return;
+        if (!_audioCapture.IsRecording || _isBusy) return;
 
-        _recordingHUD.HideHUD();
         _isBusy = true;
+        _recordingHUD.SetTranscribing();
 
         try
         {
@@ -92,7 +165,7 @@ public class TrayApplicationContext : ApplicationContext
 
                 if (!string.IsNullOrWhiteSpace(finalText))
                 {
-                    TextInputService.InsertText(finalText);
+                    TextInputService.InsertText(finalText, _settings.InsertionMode, _targetWindow);
                 }
             }
         }
@@ -102,6 +175,7 @@ public class TrayApplicationContext : ApplicationContext
         }
         finally
         {
+            _recordingHUD.HideHUD();
             _isBusy = false;
         }
     }
@@ -111,7 +185,8 @@ public class TrayApplicationContext : ApplicationContext
         using var form = new SettingsForm(_settings, updated =>
         {
             SettingsManager.SaveSettings(updated);
-            _trayIcon.Text = $"UltraDictate — {updated.Hotkey}";
+            ApplyHotkeySettings();
+            UpdateTrayTooltip($"UltraDictate — {updated.Hotkey}");
         });
         form.ShowDialog();
     }
@@ -119,8 +194,9 @@ public class TrayApplicationContext : ApplicationContext
     private void ShowAbout()
     {
         MessageBox.Show(
-            "UltraDictate v1.0.0\n" +
-            "Fast, private, local push-to-talk speech dictation for macOS & Windows.\n\n" +
+            "UltraDictate v1.0.1\n" +
+            "Fast, private, local speech dictation for macOS & Windows.\n\n" +
+            "Speech Engine: Local Whisper AI (Whisper.net / ONNX)\n" +
             "Hardware Acceleration: DirectML (GPU / NPU) & Apple Silicon (ANE)\n" +
             "AI Post-Processing: Local Ollama & LM Studio ready\n\n" +
             "Author: m0rvey (github.com/m0rvey/ultradictate)\n" +

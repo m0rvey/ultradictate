@@ -21,6 +21,11 @@ if (-not (Test-Path $InstallDir)) {
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 }
 
+$ModelsDir = Join-Path $env:APPDATA "UltraDictate\models"
+if (-not (Test-Path $ModelsDir)) {
+    New-Item -ItemType Directory -Path $ModelsDir -Force | Out-Null
+}
+
 Copy-Item -Path $SourceExe -Destination (Join-Path $InstallDir "UltraDictate.exe") -Force
 
 # Create Desktop Shortcut

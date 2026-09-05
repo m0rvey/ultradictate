@@ -10,7 +10,9 @@ public class AppSettings
     public string Hotkey { get; set; } = "RightControl";
     public string TriggerMode { get; set; } = "HoldToDictate"; // "HoldToDictate" or "PressToToggle"
     public string ModelName { get; set; } = "openai/whisper-base";
+    public string WhisperModelType { get; set; } = "Base"; // "Base" or "Tiny"
     public string Language { get; set; } = "auto";
+    public string InsertionMode { get; set; } = "ClipboardPaste"; // "ClipboardPaste" or "DirectTyping"
     public bool RemoveTrailingPeriod { get; set; } = false;
     public bool EnableAICleanup { get; set; } = false;
     public string AIBaseUrl { get; set; } = "http://localhost:11434/v1"; // Ollama by default

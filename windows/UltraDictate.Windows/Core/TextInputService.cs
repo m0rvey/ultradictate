@@ -12,26 +12,104 @@ public static class TextInputService
     private const int INPUT_KEYBOARD = 1;
     private const uint KEYEVENTF_KEYUP = 0x0002;
     private const uint KEYEVENTF_UNICODE = 0x0004;
-    private const ushort VK_CONTROL = 0x11;
-    private const ushort VK_RETURN = 0x0D;
-    private const ushort VK_V = 0x56;
 
-    public static void InsertText(string text)
+    public const byte VK_SHIFT = 0x10;
+    public const byte VK_CONTROL = 0x11;
+    public const byte VK_MENU = 0x12; // Alt
+    public const byte VK_RETURN = 0x0D;
+    public const byte VK_V = 0x56;
+    public const byte VK_LWIN = 0x5B;
+    public const byte VK_RWIN = 0x5C;
+    public const byte VK_LCONTROL = 0xA2;
+    public const byte VK_RCONTROL = 0xA3;
+    public const byte VK_LMENU = 0xA4;
+    public const byte VK_RMENU = 0xA5;
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("user32.dll")]
+    private static extern bool BringWindowToTop(IntPtr hWnd);
+
+    public static void ForceForegroundWindow(IntPtr targetHwnd)
+    {
+        if (targetHwnd == IntPtr.Zero) return;
+
+        IntPtr currentForeground = GetForegroundWindow();
+        if (currentForeground == targetHwnd) return;
+
+        uint currentThreadId = GetCurrentThreadId();
+        uint targetThreadId = GetWindowThreadProcessId(targetHwnd, out _);
+
+        if (currentThreadId != targetThreadId && targetThreadId != 0)
+        {
+            AttachThreadInput(currentThreadId, targetThreadId, true);
+            BringWindowToTop(targetHwnd);
+            SetForegroundWindow(targetHwnd);
+            AttachThreadInput(currentThreadId, targetThreadId, false);
+        }
+        else
+        {
+            BringWindowToTop(targetHwnd);
+            SetForegroundWindow(targetHwnd);
+        }
+    }
+
+    public static void ReleaseModifiers()
+    {
+        keybd_event(VK_RCONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_LCONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_RMENU, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_LMENU, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_RWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+    }
+
+    public static void InsertText(string text, string mode = "ClipboardPaste", IntPtr targetHwnd = default)
     {
         if (string.IsNullOrEmpty(text)) return;
 
-        // If text is short or moderately sized (< 250 chars), direct Unicode typing is
-        // instantaneous, 100% reliable, never collides with clipboard, and works with Russian / code.
-        if (text.Length < 250)
+        // 1. Ensure target window has focus
+        if (targetHwnd != IntPtr.Zero)
+        {
+            ForceForegroundWindow(targetHwnd);
+            Thread.Sleep(40);
+        }
+
+        // 2. Release physical modifiers so Ctrl/Alt are not stuck
+        ReleaseModifiers();
+        Thread.Sleep(35);
+
+        // 3. Direct typing mode or fallback
+        if (mode == "DirectTyping")
         {
             SendUnicodeString(text);
             return;
         }
 
-        // For large text blocks, attempt high-speed clipboard paste with safe retry & restore
+        // 4. High-speed clipboard paste mode (Default)
         bool clipboardPasted = TryClipboardPaste(text);
         if (!clipboardPasted)
         {
+            // Fallback to direct Unicode keystrokes if clipboard was locked
             SendUnicodeString(text);
         }
     }
@@ -44,8 +122,8 @@ public static class TextInputService
             IDataObject? previousData = null;
             try
             {
-                // Retry opening clipboard up to 8 times if locked by another app
-                for (int i = 0; i < 8; i++)
+                // Retry opening clipboard up to 10 times if locked by another process
+                for (int i = 0; i < 10; i++)
                 {
                     try
                     {
@@ -65,15 +143,19 @@ public static class TextInputService
 
                 if (!success) return;
 
-                // Release physical Ctrl if held, then synthesize Ctrl+V
-                SendCtrlV();
+                // Micro-delay so Windows clipboard synchronization completes
+                Thread.Sleep(25);
 
-                // Detached task to restore original clipboard after target app consumes it
+                // Synthesize Ctrl+V
+                SendCtrlV();
+                Thread.Sleep(45);
+
+                // Detached task to restore original clipboard after target app processes paste
                 if (previousData != null)
                 {
                     Task.Run(async () =>
                     {
-                        await Task.Delay(350);
+                        await Task.Delay(1200);
                         var restoreThread = new Thread(() =>
                         {
                             for (int retry = 0; retry < 5; retry++)
@@ -85,7 +167,7 @@ public static class TextInputService
                                 }
                                 catch
                                 {
-                                    Thread.Sleep(30);
+                                    Thread.Sleep(40);
                                 }
                             }
                         });
@@ -102,7 +184,7 @@ public static class TextInputService
 
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
-        thread.Join(800);
+        thread.Join(1200);
         return success;
     }
 
@@ -181,27 +263,13 @@ public static class TextInputService
 
     private static void SendCtrlV()
     {
-        var inputs = new INPUT[4];
-
-        // Ctrl down
-        inputs[0].type = INPUT_KEYBOARD;
-        inputs[0].u.ki.wVk = VK_CONTROL;
-
-        // V down
-        inputs[1].type = INPUT_KEYBOARD;
-        inputs[1].u.ki.wVk = VK_V;
-
-        // V up
-        inputs[2].type = INPUT_KEYBOARD;
-        inputs[2].u.ki.wVk = VK_V;
-        inputs[2].u.ki.dwFlags = KEYEVENTF_KEYUP;
-
-        // Ctrl up
-        inputs[3].type = INPUT_KEYBOARD;
-        inputs[3].u.ki.wVk = VK_CONTROL;
-        inputs[3].u.ki.dwFlags = KEYEVENTF_KEYUP;
-
-        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+        keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+        Thread.Sleep(15);
+        keybd_event(VK_V, 0, 0, UIntPtr.Zero);
+        Thread.Sleep(15);
+        keybd_event(VK_V, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        Thread.Sleep(15);
+        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
     }
 
     [StructLayout(LayoutKind.Sequential)]

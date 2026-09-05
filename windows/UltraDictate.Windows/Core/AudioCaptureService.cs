@@ -134,8 +134,8 @@ public class AudioCaptureService : IDisposable
         }
 
         float rms = MathF.Sqrt(sumSquares / frameCount);
-        // Scale RMS to a pleasant visual range [0.0, 1.0]
-        float visualLevel = Math.Clamp(rms * 5.0f, 0f, 1f);
+        // Perceptual dynamic curve: normal speech is ~0.005 to 0.08 RMS
+        float visualLevel = Math.Clamp(MathF.Pow(rms * 12.0f, 0.65f), 0f, 1f);
         AudioLevelChanged?.Invoke(visualLevel);
     }
 

@@ -9,7 +9,7 @@
     <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <AssemblyName>UltraDictate</AssemblyName>
     <RootNamespace>UltraDictate.Windows</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Authors>m0rvey</Authors>
     <Company>m0rvey</Company>
     <Product>UltraDictate for Windows</Product>
@@ -26,6 +26,9 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.19.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+    <PackageReference Include="System.Speech" Version="10.0.11" />
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.1" />
   </ItemGroup>
 
   <ItemGroup>
