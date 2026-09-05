@@ -49,7 +49,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Publish Windows Standalone Executable
-        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true windows/UltraDictate.Windows/UltraDictate.Windows.csproj -o dist-win
+        run: |
+          dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false windows/UltraDictate.Windows/UltraDictate.Windows.csproj -o dist-win
+          if (Test-Path dist-win/*.pdb) { Remove-Item dist-win/*.pdb -Force }
       - name: Package Windows Zip
         id: package
         shell: pwsh
@@ -95,7 +97,7 @@ jobs:
             UltraDictate is a high-performance, private push-to-talk speech dictation system for macOS and Windows.
             
             ### 📦 Downloads
-            - **macOS (Apple Silicon M1-M4):** [`UltraDictate-macOS-arm64.zip`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name != '' && github.ref_name || inputs.tag }}/UltraDictate-macOS-arm64.zip)
+            - **macOS (Apple Silicon M1-M5, A18 Pro):** [`UltraDictate-macOS-arm64.zip`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name != '' && github.ref_name || inputs.tag }}/UltraDictate-macOS-arm64.zip)
               - SHA-256: `${{ needs.build-macos.outputs.sha256 }}`
             - **Windows (x64):** [`UltraDictate-Windows-x64.zip`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name != '' && github.ref_name || inputs.tag }}/UltraDictate-Windows-x64.zip)
               - SHA-256: `${{ needs.build-windows.outputs.sha256 }}`
